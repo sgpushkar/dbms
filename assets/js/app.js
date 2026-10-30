@@ -783,7 +783,7 @@ function highlightSearchTerm(text, term) {
   if (!term || !text) return escapeHtml(text);
   const escaped = escapeHtml(text);
   const regex = new RegExp(`(${escapeRegex(term)})`, 'gi');
-  return escaped.replace(regex, '<mark style="background: rgba(253, 224, 71, 0.4); color: inherit; padding: 0 2px; border-radius: 2px;">$1</mark>');
+  return escaped.replace(regex, '<mark style="background: var(--text-primary); color: var(--bg-surface); padding: 0 3px; border-radius: 2px; font-weight: 700;">$1</mark>');
 }
 
 function escapeRegex(string) {
