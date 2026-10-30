@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DBMS Laboratory Experiments Portal | Oracle SQL Practicals</title>
+  <meta name="description" content="Comprehensive interactive static portal displaying all Database Management System (DBMS) laboratory experiments, SQL queries, schemas, and Oracle Express Edition execution outputs.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="assets/css/style.css">
+</head>
+<body>
+
+  <!-- ================= Top Navigation Header ================= -->
+  <header class="top-nav">
+    <div class="brand-section">
+      <button class="btn-icon sidebar-toggle-btn" id="sidebar-toggle" title="Toggle Navigation Sidebar" aria-label="Toggle Navigation">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+      </button>
+
+      <div class="brand-logo" title="Oracle Database Laboratory">
+        SQL
+      </div>
+
+      <div class="brand-info">
+        <h1>
+          DBMS Lab Experiments
+          <span class="rdbms-badge">Oracle 21c XE</span>
+        </h1>
+        <p>Database Management Systems Practical Portfolio</p>
+      </div>
+    </div>
+
+    <!-- Search & Global Actions -->
+    <div class="nav-actions">
+      <!-- Search Box with Keyboard Shortcut -->
+      <div class="search-box">
+        <svg class="search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        <input type="text" id="global-search" placeholder="Search experiments, queries, keywords (press '/' to focus)..." aria-label="Search Experiments">
+        <button class="search-clear" id="search-clear" title="Clear Search">&times;</button>
+      </div>
+
+      <!-- SQL Playground Modal Trigger -->
+      <button class="btn-nav-primary" onclick="openSandboxWithQuery('SELECT * FROM Employee;')" title="Open Interactive SQL Sandbox">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+        <span>SQL Sandbox</span>
+      </button>
+
+      <!-- Print / Export Button -->
+      <button class="btn-icon" onclick="triggerPrintJournal()" title="Print / Save PDF Lab Journal" aria-label="Print Lab Journal">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+      </button>
+
+      <!-- Dark / Light Theme Toggle -->
+      <button class="btn-icon" id="btn-toggle-theme" title="Toggle Dark / Light Theme" aria-label="Toggle Theme">
+        <!-- Injected via JavaScript -->
+      </button>
+    </div>
+  </header>
+
+  <!-- ================= Main Layout ================= -->
+  <div class="main-layout">
+    <!-- Sidebar Navigation -->
+    <aside class="sidebar" id="sidebar">
+      <div>
+        <div class="sidebar-heading">Experiments Table of Contents</div>
+        <ul class="exp-nav-list" id="sidebar-nav-list">
+          <!-- Dynamically populated by app.js -->
+        </ul>
+      </div>
+
+      <!-- Quick Resources Section -->
+      <div style="border-top: 1px solid var(--border-color); padding-top: 1rem;">
+        <div class="sidebar-heading">Quick Shortcuts</div>
+        <ul class="exp-nav-list">
+          <li class="exp-nav-item">
+            <a href="javascript:void(0)" onclick="openSandboxWithQuery('SELECT * FROM students NATURAL JOIN courses;')">
+              <span class="exp-badge-pill" style="background: var(--info-bg); color: var(--info);">⚡</span>
+              <span class="exp-nav-text">Interactive Query Sandbox</span>
+            </a>
+          </li>
+          <li class="exp-nav-item">
+            <a href="javascript:void(0)" onclick="triggerPrintJournal()">
+              <span class="exp-badge-pill" style="background: var(--warning-bg); color: var(--warning);">🖨️</span>
+              <span class="exp-nav-text">Print-Ready View</span>
+            </a>
+          </li>
+        </ul>
+      </div>
+
+      <!-- Student Attribution Card -->
+      <div class="sidebar-footer-card">
+        <div class="student-card-title">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+          Lab Practical Details
+        </div>
+        <div class="student-card-detail">
+          <strong>Contributors:</strong> Gargi M. Malvi (Roll 18/20)<br>
+          Pranali R. Karande (Roll 06)<br>
+          <strong>Division / Batch:</strong> B / B1<br>
+          <strong>Environment:</strong> Oracle XE 21c
+        </div>
+      </div>
+    </aside>
+
+    <!-- Main Content Area -->
+    <main class="content-area">
+      <!-- Hero Banner -->
+      <div class="hero-banner">
+        <div class="hero-text">
+          <h2>DBMS Laboratory Practical Record</h2>
+          <p>
+            Complete academic repository of database management experiments featuring Data Definition (DDL), Data Manipulation (DML), Security & Transactions (DCL/TCL), Aggregate & Scalar Functions, Relational Joins, and Nested Subqueries with verifiable Oracle Database execution outputs.
+          </p>
+        </div>
+
+        <div class="stats-grid">
+          <div class="stat-chip">
+            <div class="stat-value">07</div>
+            <div class="stat-label">Experiments</div>
+          </div>
+          <div class="stat-chip">
+            <div class="stat-value">48+</div>
+            <div class="stat-label">SQL Queries</div>
+          </div>
+          <div class="stat-chip">
+            <div class="stat-value">37+</div>
+            <div class="stat-label">Real Outputs</div>
+          </div>
+          <div class="stat-chip">
+            <div class="stat-value">100%</div>
+            <div class="stat-label">Verified</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Controls Toolbar (Category Filters & View Switchers) -->
+      <div class="controls-toolbar">
+        <!-- Category Filter Chips -->
+        <div class="filter-chips">
+          <button class="filter-chip active" data-category="ALL">All Experiments (7)</button>
+          <button class="filter-chip" data-category="DDL">DDL Schema</button>
+          <button class="filter-chip" data-category="DML">DML Data</button>
+          <button class="filter-chip" data-category="DCL & TCL">DCL & TCL</button>
+          <button class="filter-chip" data-category="Aggregation & Sets">Aggregation & Sets</button>
+          <button class="filter-chip" data-category="String Functions">String Functions</button>
+          <button class="filter-chip" data-category="Joins">Joins</button>
+          <button class="filter-chip" data-category="Subqueries">Subqueries</button>
+        </div>
+
+        <!-- View Controls (Split, Stacked, Code Only, Output Only) -->
+        <div class="view-controls">
+          <span style="font-size: 0.75rem; color: var(--text-muted); font-weight: 600;">Layout:</span>
+          <div class="layout-btn-group">
+            <button class="layout-btn active" data-view="split" title="Side-by-side: Code & Output">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="8" height="18" rx="1"/><rect x="13" y="3" width="8" height="18" rx="1"/></svg>
+              Split
+            </button>
+            <button class="layout-btn" data-view="stacked" title="Stacked: Code above Output">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="8" rx="1"/><rect x="3" y="13" width="18" height="8" rx="1"/></svg>
+              Stacked
+            </button>
+            <button class="layout-btn" data-view="code-only" title="Code Only">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+              Code
+            </button>
+            <button class="layout-btn" data-view="output-only" title="Output Screenshots Only">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+              Output
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Dynamic Experiments Mount Target -->
+      <div id="experiments-root">
+        <!-- Rendered dynamically via app.js -->
+      </div>
+    </main>
+  </div>
+
+  <!-- ================= Footer ================= -->
+  <footer class="site-footer">
+    <div class="footer-inner">
+      <div class="footer-authors">
+        <div style="font-weight: 700; color: var(--text-primary);">Database Management Systems Laboratory Portal</div>
+        <div>Curated from verified laboratory manuals & Oracle XE execution sessions.</div>
+      </div>
+
+      <div class="footer-actions">
+        <button class="btn-query-action" onclick="window.scrollTo({top: 0, behavior: 'smooth'})">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/></svg>
+          Back to Top
+        </button>
+        <button class="btn-query-action" onclick="triggerPrintJournal()">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+          Print Record
+        </button>
+      </div>
+    </div>
+  </footer>
+
+  <!-- ================= Fullscreen Image Lightbox Modal ================= -->
+  <div class="lightbox-modal" id="lightbox-modal" role="dialog" aria-modal="true">
+    <div class="lightbox-header">
+      <div class="lightbox-title" id="lightbox-title">Execution Screenshot</div>
+      <div class="lightbox-controls">
+        <button class="btn-lightbox" onclick="zoomLightbox(-0.25)" title="Zoom Out (-)">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="8" y1="11" x2="14" y2="11"/></svg>
+        </button>
+        <button class="btn-lightbox" onclick="zoomLightbox(0.25)" title="Zoom In (+)">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="11" y1="8" x2="11" y2="14"/><line x1="8" y1="11" x2="14" y2="11"/></svg>
+        </button>
+        <button class="btn-lightbox" onclick="downloadCurrentLightboxImage()" title="Download Image">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        </button>
+        <button class="btn-lightbox" onclick="closeLightbox()" title="Close (Esc)">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+    </div>
+
+    <div class="lightbox-stage" onclick="if(event.target===this) closeLightbox()">
+      <button class="lightbox-nav-btn lightbox-prev" onclick="navigateLightbox(-1)" title="Previous (Left Arrow)">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
+      </button>
+
+      <div class="lightbox-img-wrapper" id="lightbox-img-wrapper">
+        <img src="" alt="" class="lightbox-img" id="lightbox-img">
+      </div>
+
+      <button class="lightbox-nav-btn lightbox-next" onclick="navigateLightbox(1)" title="Next (Right Arrow)">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
+      </button>
+    </div>
+
+    <div class="lightbox-footer">
+      <span id="lightbox-caption">Description</span>
+      <span id="lightbox-counter" style="font-family: var(--font-mono); font-weight: 600;">1 / 1</span>
+    </div>
+  </div>
+
+  <!-- ================= Interactive SQL Sandbox Modal ================= -->
+  <div class="modal-backdrop" id="sandbox-modal-backdrop" onclick="if(event.target===this) closeSandbox()">
+    <div class="sandbox-modal">
+      <div class="sandbox-header">
+        <h3>
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="color: #10b981;"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+          Interactive SQL Playground & Simulator
+        </h3>
+        <button class="btn-lightbox" onclick="closeSandbox()" style="color: var(--text-primary); background: var(--bg-surface-secondary); border-color: var(--border-color);" title="Close Sandbox">
+          &times;
+        </button>
+      </div>
+
+      <div class="sandbox-body">
+        <div>
+          <div style="font-size: 0.75rem; font-weight: 700; color: var(--text-muted); margin-bottom: 0.4rem; text-transform: uppercase;">
+            Quick Pre-loaded Queries:
+          </div>
+          <div class="sandbox-presets">
+            <button class="sandbox-preset-chip" onclick="document.getElementById('sandbox-sql-input').value='SELECT * FROM Employee;'; executeSandboxQuery();">
+              SELECT * FROM Employee
+            </button>
+            <button class="sandbox-preset-chip" onclick="document.getElementById('sandbox-sql-input').value='SELECT * FROM Employee WHERE SALARY > 28000;'; executeSandboxQuery();">
+              Employee WHERE SALARY > 28000
+            </button>
+            <button class="sandbox-preset-chip" onclick="document.getElementById('sandbox-sql-input').value='SELECT * FROM student2;'; executeSandboxQuery();">
+              SELECT * FROM student2
+            </button>
+            <button class="sandbox-preset-chip" onclick="document.getElementById('sandbox-sql-input').value='SELECT * FROM DEPARTMENT;'; executeSandboxQuery();">
+              SELECT * FROM DEPARTMENT
+            </button>
+            <button class="sandbox-preset-chip" onclick="document.getElementById('sandbox-sql-input').value='SELECT * FROM students;'; executeSandboxQuery();">
+              SELECT * FROM students
+            </button>
+            <button class="sandbox-preset-chip" onclick="document.getElementById('sandbox-sql-input').value='SELECT * FROM courses;'; executeSandboxQuery();">
+              SELECT * FROM courses
+            </button>
+          </div>
+        </div>
+
+        <div class="sandbox-editor-wrapper">
+          <textarea class="sandbox-textarea" id="sandbox-sql-input" placeholder="Type SQL query here (e.g. SELECT * FROM Employee WHERE DEPARTMENT = 'IT';)...">SELECT * FROM Employee;</textarea>
+        </div>
+
+        <div class="sandbox-toolbar">
+          <span style="font-size: 0.75rem; color: var(--text-muted);">
+            Simulating against local in-memory tables: STUDENT27, student2, Employee, courses, students, DEPARTMENT, EMPLOYEE.
+          </span>
+          <button class="btn-run-sql" onclick="executeSandboxQuery()">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+            Execute SQL
+          </button>
+        </div>
+
+        <div>
+          <div style="font-size: 0.75rem; font-weight: 700; color: var(--text-muted); margin-bottom: 0.4rem; text-transform: uppercase;">
+            Query Execution Output:
+          </div>
+          <div class="sandbox-result-area" id="sandbox-result-area">
+            <!-- Output rendered dynamically -->
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Application Logic Scripts -->
+  <script src="assets/js/data.js"></script>
+  <script src="assets/js/app.js"></script>
+</body>
+</html>
+
