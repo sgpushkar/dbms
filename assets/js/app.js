@@ -1,73 +1,26 @@
 /**
- * DBMS Laboratory Experiments Portal - Interactive Application Logic
- * Supports dynamic rendering, syntax highlighting, search, filtering,
- * image lightbox with zoom/pan, copy-to-clipboard, view modes, and SQL Sandbox.
+ * Analysis of Algorithms (AOA) Laboratory Practicals Portal
+ * Interactive Application Engine
+ * Supports dynamic rendering, C syntax highlighting, category filtering,
+ * instant search, zoomable lightbox, copy-to-clipboard, view modes,
+ * and a full in-browser interactive Algorithm Simulator.
  */
 
-// State Management
+// Application State
 const state = {
-  theme: localStorage.getItem('dbms_theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'),
+  theme: localStorage.getItem('aoa_theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'),
   currentCategory: 'ALL',
   searchQuery: '',
-  layoutView: localStorage.getItem('dbms_layout') || 'split', // 'split', 'stacked', 'code-only', 'output-only'
+  layoutView: localStorage.getItem('aoa_layout') || 'split', // 'split', 'stacked', 'code-only', 'output-only'
   lightbox: {
     isOpen: false,
     images: [],
     currentIndex: 0,
     zoom: 1
+  },
+  simulator: {
+    selectedAlgorithm: 'exp-1'
   }
-};
-
-// SQL Mock Database for Interactive Sandbox
-const MOCK_DB = {
-  STUDENT27: [
-    { NAME: 'Gargi', EMAIL: 'gargi@dbms.edu', ADDRESS: 'Mumbai', DOB: '2004-05-18', PHONE_NO: '9876543210', ROLL_NO: '18' },
-    { NAME: 'Pranali', EMAIL: 'pranali@dbms.edu', ADDRESS: 'Pune', DOB: '2004-03-12', PHONE_NO: '9876543211', ROLL_NO: '06' },
-    { NAME: 'Riya', EMAIL: 'riya@dbms.edu', ADDRESS: 'Navi Mumbai', DOB: '2004-07-22', PHONE_NO: '9876543212', ROLL_NO: '12' },
-    { NAME: 'Mansi', EMAIL: 'mansi@dbms.edu', ADDRESS: 'Thane', DOB: '2004-11-09', PHONE_NO: '9876543213', ROLL_NO: '24' }
-  ],
-  student2: [
-    { NAME: 'gargi', EMAIL: 'gargi.com', ADDRESS: '-', PHONE_NO: '12345', DOB: '17' },
-    { NAME: 'pranali', EMAIL: 'pranali.com', ADDRESS: '-', PHONE_NO: '15678', DOB: '3' },
-    { NAME: 'mansi', EMAIL: 'mansi.com', ADDRESS: '-', PHONE_NO: '46789', DOB: '2.5' },
-    { NAME: 'nishita', EMAIL: 'nishita.com', ADDRESS: '-', PHONE_NO: '14237', DOB: '2.75' },
-    { NAME: 'aarya', EMAIL: 'aarya.com', ADDRESS: '-', PHONE_NO: '345', DOB: '1.25' },
-    { NAME: 'hary', EMAIL: 'hary.com', ADDRESS: '-', PHONE_NO: '9865', DOB: '6.8' },
-    { NAME: 'monu', EMAIL: 'monu.com', ADDRESS: '-', PHONE_NO: '7895', DOB: '4' }
-  ],
-  Employee: [
-    { EMPID: '101', EMPNAME: 'Rahul', DEPARTMENT: 'HR', SALARY: 28000 },
-    { EMPID: '102', EMPNAME: 'Priya', DEPARTMENT: 'IT', SALARY: 30000 },
-    { EMPID: '103', EMPNAME: 'Sneha', DEPARTMENT: 'Sales', SALARY: 40000 },
-    { EMPID: '104', EMPNAME: 'Karan', DEPARTMENT: 'HR', SALARY: 25000 },
-    { EMPID: '105', EMPNAME: 'Amit', DEPARTMENT: 'IT', SALARY: 27000 },
-    { EMPID: '106', EMPNAME: 'Neha', DEPARTMENT: 'Sales', SALARY: 32000 },
-    { EMPID: '107', EMPNAME: 'Rohan', DEPARTMENT: 'HR', SALARY: 22000 }
-  ],
-  courses: [
-    { COURSE_ID: 101, COURSE_NAME: 'Data_Structures' },
-    { COURSE_ID: 102, COURSE_NAME: 'Web_Development' },
-    { COURSE_ID: 103, COURSE_NAME: 'Machine_Learning' },
-    { COURSE_ID: 104, COURSE_NAME: 'Cyber_security' }
-  ],
-  students: [
-    { STUDENT_ID: 1, STUDENT_NAME: 'Liam', COURSE_ID: 101 },
-    { STUDENT_ID: 2, STUDENT_NAME: 'Emma', COURSE_ID: 102 },
-    { STUDENT_ID: 3, STUDENT_NAME: 'Noah', COURSE_ID: 103 },
-    { STUDENT_ID: 4, STUDENT_NAME: 'Olivia', COURSE_ID: null }
-  ],
-  DEPARTMENT: [
-    { DEPTNO: 10, DNAME: 'HR', LOCATION: 'MUMBAI' },
-    { DEPTNO: 20, DNAME: 'IT', LOCATION: 'PUNE' },
-    { DEPTNO: 30, DNAME: 'SALES', LOCATION: 'DELHI' },
-    { DEPTNO: 40, DNAME: 'FINANCE', LOCATION: 'NAGPUR' }
-  ],
-  EMPLOYEE: [
-    { EMPNO: 101, ENAME: 'AMIT', JOB: 'MANAGER', SALARY: 50000, DEPTNO: 10 },
-    { EMPNO: 102, RAHUL: 'DEVELOPER', JOB: 'DEVELOPER', ENAME: 'RAHUL', SALARY: 44000, DEPTNO: 20 },
-    { EMPNO: 103, ENAME: 'PRIYA', JOB: 'ANALYST', SALARY: 38500, DEPTNO: 20 },
-    { EMPNO: 104, ENAME: 'NEHA', JOB: 'SALESMAN', SALARY: 30000, DEPTNO: 30 }
-  ]
 };
 
 // Initialize Application
@@ -79,13 +32,14 @@ document.addEventListener('DOMContentLoaded', () => {
   setupEventListeners();
   collectLightboxImages();
   setupScrollSpy();
+  initSimulatorControls();
 });
 
 // Theme Management
 function applyTheme(theme) {
   state.theme = theme;
   document.documentElement.setAttribute('data-theme', theme);
-  localStorage.setItem('dbms_theme', theme);
+  localStorage.setItem('aoa_theme', theme);
   const themeBtn = document.getElementById('btn-toggle-theme');
   if (themeBtn) {
     themeBtn.innerHTML = theme === 'dark' 
@@ -94,17 +48,17 @@ function applyTheme(theme) {
   }
 }
 
-// Layout View Switcher
+// Layout Switcher (Split, Stacked, Code Only, Output Only)
 function applyLayoutView(view) {
   state.layoutView = view;
   document.body.setAttribute('data-view', view);
-  localStorage.setItem('dbms_layout', view);
+  localStorage.setItem('aoa_layout', view);
   document.querySelectorAll('.layout-btn').forEach(btn => {
     btn.classList.toggle('active', btn.dataset.view === view);
   });
 }
 
-// Sidebar Navigation
+// Build Sidebar Table of Contents
 function buildSidebarNav() {
   const navContainer = document.getElementById('sidebar-nav-list');
   if (!navContainer) return;
@@ -114,37 +68,36 @@ function buildSidebarNav() {
       <a href="#${exp.id}" onclick="smoothScrollTo('${exp.id}', event)">
         <span class="exp-badge-pill">${exp.number}</span>
         <span class="exp-nav-text">${escapeHtml(exp.title)}</span>
-        <span class="exp-nav-count">${exp.items ? exp.items.length : 0}</span>
+        <span class="exp-nav-count">${exp.items ? exp.items.length : 1}</span>
       </a>
     </li>
   `).join('');
 }
 
-// Syntax Highlighting for SQL
-function highlightSQL(sql) {
-  const keywords = /\b(SELECT|FROM|WHERE|INSERT|INTO|VALUES|UPDATE|SET|DELETE|CREATE|TABLE|ALTER|ADD|DROP|COLUMN|MODIFY|DESC|DESCRIBE|GROUP|BY|HAVING|ORDER|ASC|DESC|UNION|ALL|INTERSECT|MINUS|JOIN|INNER|LEFT|RIGHT|FULL|OUTER|NATURAL|ON|AS|AND|OR|NOT|IN|PRIMARY|KEY|FOREIGN|REFERENCES|USER|IDENTIFIED|GRANT|TO|REVOKE|COMMIT|ROLLBACK|dual)\b/gi;
-  const functions = /\b(MIN|MAX|AVG|SUM|COUNT|LENGTH|CONCAT|UPPER|LOWER|REPLACE|SUBSTR|INSTR|TRIM)\b/gi;
-  const dataTypes = /\b(NUMBER|VARCHAR2|VARCHAR|CHAR|NCHAR|DATE)\b/gi;
-  
-  let formatted = escapeHtml(sql);
-  
-  // Highlight single-line comments
-  formatted = formatted.replace(/(--.*$)/gm, '<span class="sql-comment">$1</span>');
-  
-  // Highlight strings
-  formatted = formatted.replace(/('([^'\\]|\\.)*')/g, '<span class="sql-string">$1</span>');
-  
-  // Highlight keywords
-  formatted = formatted.replace(keywords, match => `<span class="sql-keyword">${match.toUpperCase()}</span>`);
-  
-  // Highlight aggregate & scalar functions
-  formatted = formatted.replace(functions, match => `<span class="sql-function">${match.toUpperCase()}</span>`);
-  
-  // Highlight data types
-  formatted = formatted.replace(dataTypes, match => `<span class="sql-type">${match.toUpperCase()}</span>`);
-  
-  // Highlight numbers (standalone digits)
-  formatted = formatted.replace(/\b(\d+)\b/g, '<span class="sql-number">$1</span>');
+// Syntax Highlighting for C Code
+function highlightCCode(code) {
+  let formatted = escapeHtml(code);
+
+  // Preprocessor directives (#include, #define)
+  formatted = formatted.replace(/(#(?:include|define|ifdef|ifndef|endif)[^\n\r]*)/g, '<span class="c-preprocessor">$1</span>');
+
+  // Multi-line and single-line comments
+  formatted = formatted.replace(/(\/\*[\s\S]*?\*\/)/g, '<span class="c-comment">$1</span>');
+  formatted = formatted.replace(/(\/\/.*$)/gm, '<span class="c-comment">$1</span>');
+
+  // String literals
+  formatted = formatted.replace(/(&quot;[\s\S]*?&quot;)/g, '<span class="c-string">$1</span>');
+
+  // Keywords
+  const keywords = /\b(void|int|char|float|double|struct|typedef|for|while|if|else|return|break|continue|switch|case|default|static|const|sizeof)\b/g;
+  formatted = formatted.replace(keywords, '<span class="c-keyword">$1</span>');
+
+  // Standard Library & Common Functions
+  const functions = /\b(printf|scanf|clrscr|getch|abs|strlen|quicksort|mergeSort|merge|nqueen|place|display|find|uni|graphColoring|isSafe)\b/g;
+  formatted = formatted.replace(functions, '<span class="c-function">$1</span>');
+
+  // Numbers
+  formatted = formatted.replace(/\b(\d+)\b/g, '<span class="c-number">$1</span>');
 
   return formatted;
 }
@@ -160,18 +113,17 @@ function renderExperiments() {
   let filtered = EXPERIMENTS_DATA.filter(exp => {
     // Category filter
     if (category !== 'ALL' && exp.category !== category) return false;
-    
-    // Search query filter
+
+    // Search filter
     if (!query) return true;
-    
-    const expText = `${exp.number} ${exp.title} ${exp.subtitle} ${exp.category} ${exp.aim} ${exp.theory}`.toLowerCase();
+
+    const expText = `${exp.number} ${exp.title} ${exp.subtitle} ${exp.category} ${exp.paradigm} ${exp.aim} ${exp.theory} ${exp.complexities.bestTime} ${exp.complexities.worstTime}`.toLowerCase();
     if (expText.includes(query)) return true;
-    
-    // Check inside items
+
     if (exp.items && exp.items.some(item => 
-      `${item.title} ${item.type} ${item.sql} ${item.description} ${item.status}`.toLowerCase().includes(query)
+      `${item.title} ${item.type} ${item.code} ${item.description} ${item.status} ${item.terminalOutput}`.toLowerCase().includes(query)
     )) return true;
-    
+
     return false;
   });
 
@@ -180,7 +132,7 @@ function renderExperiments() {
       <div style="text-align: center; padding: 4rem 2rem; background: var(--bg-surface); border-radius: var(--radius-lg); border: 1px dashed var(--border-color);">
         <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="margin: 0 auto 1rem; color: var(--text-muted);"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
         <h3 style="font-size: 1.25rem; font-weight: 700; color: var(--text-primary); margin-bottom: 0.5rem;">No matching experiments found</h3>
-        <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 1.5rem;">Try modifying your search terms or clearing the active category filters.</p>
+        <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 1.5rem;">Try modifying your search query or reset category filter.</p>
         <button class="btn-nav-primary" onclick="resetFilters()" style="margin: 0 auto;">Reset All Filters</button>
       </div>
     `;
@@ -193,10 +145,6 @@ function renderExperiments() {
 
 // Render Single Experiment Section
 function renderExperimentSection(exp, searchQuery) {
-  const studentInfo = exp.student 
-    ? `${exp.student.name} • Roll No: ${exp.student.rollNo} • Div/Batch: ${exp.student.division}/${exp.student.batch}`
-    : 'DBMS Laboratory';
-
   return `
     <section class="experiment-section" id="${exp.id}">
       <!-- Header -->
@@ -210,26 +158,51 @@ function renderExperimentSection(exp, searchQuery) {
         </div>
         <div class="exp-meta-tags">
           <span class="tag-badge tag-${exp.badgeColor}">${exp.category}</span>
-          <span class="student-tag">${studentInfo}</span>
-          <span class="rdbms-badge">Oracle 21c XE</span>
+          <span class="student-tag">${exp.paradigm}</span>
+          <span class="algo-badge">${exp.environment}</span>
         </div>
       </div>
 
       <div class="exp-body">
-        <!-- Aim & Theory -->
+        <!-- Aim, Theory & Complexities -->
         <div class="aim-theory-box">
           <div class="aim-title">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>
             Aim / Objective
           </div>
           <div class="aim-desc">${highlightSearchTerm(exp.aim, searchQuery)}</div>
+
+          <!-- Time & Space Complexity Cards Grid -->
+          <div class="complexity-grid">
+            <div class="complexity-card">
+              <span class="complexity-label">Best Case Time</span>
+              <span class="complexity-value">${exp.complexities.bestTime}</span>
+            </div>
+            <div class="complexity-card">
+              <span class="complexity-label">Average Case Time</span>
+              <span class="complexity-value">${exp.complexities.avgTime}</span>
+            </div>
+            <div class="complexity-card">
+              <span class="complexity-label">Worst Case Time</span>
+              <span class="complexity-value">${exp.complexities.worstTime}</span>
+            </div>
+            <div class="complexity-card">
+              <span class="complexity-label">Space Complexity</span>
+              <span class="complexity-value">${exp.complexities.space}</span>
+            </div>
+          </div>
           
           <details class="details-collapsible">
-            <summary>View Concept, Theory & Key Learning Outcomes</summary>
+            <summary>View Theoretical Background, Recurrence & Learning Outcomes</summary>
             <div class="theory-content">
               <p>${exp.theory}</p>
+              ${exp.complexities.recurrence ? `
+                <div style="margin-top: 0.75rem; font-size: 0.825rem; font-family: var(--font-mono); color: var(--text-primary); background: var(--bg-surface-secondary); padding: 0.5rem 0.75rem; border-radius: 4px; border: 1px solid var(--border-color);">
+                  <strong>Recurrence Relation:</strong> ${exp.complexities.recurrence}
+                </div>
+              ` : ''}
               ${exp.learningOutcomes ? `
-                <div style="font-weight: 700; margin-top: 0.75rem; color: var(--text-primary); font-size: 0.8rem;">Key Takeaways:</div>
+                <div style="font-weight: 700; margin-top: 0.75rem; color: var(--text-primary); font-size: 0.8rem;">Key Takeaways & Outcomes:</div>
                 <ul class="learning-list">
                   ${exp.learningOutcomes.map(item => `<li>${item}</li>`).join('')}
                 </ul>
@@ -238,18 +211,18 @@ function renderExperimentSection(exp, searchQuery) {
           </details>
         </div>
 
-        <!-- Full PDF Lab Sheet Carousel (Exp 5 & Exp 7) -->
-        ${exp.fullPages ? `
+        <!-- Full PDF Lab Manual Pages Strip -->
+        ${exp.fullPages && exp.fullPages.length > 0 ? `
           <div class="full-pages-box">
             <div class="full-pages-header">
               <span class="full-pages-title">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
-                Original Lab Journal Document Pages (${exp.fullPages.length} Pages)
+                Original Lab Manual Document Pages (${exp.fullPages.length} Pages)
               </span>
-              <span style="font-size: 0.7rem; color: var(--text-muted);">Click any page to zoom in full resolution</span>
+              <span style="font-size: 0.7rem; color: var(--text-muted);">Click any page to zoom in high-resolution lightbox</span>
             </div>
             <div class="pages-strip">
-              ${exp.fullPages.map((pg, idx) => `
+              ${exp.fullPages.map(pg => `
                 <div class="page-thumb-card" onclick="openLightboxImage('${pg.image}', '${escapeHtml(pg.title)}')">
                   <img src="${pg.image}" alt="${pg.title}" loading="lazy">
                   <div class="page-thumb-label">Page ${pg.page}</div>
@@ -259,36 +232,19 @@ function renderExperimentSection(exp, searchQuery) {
           </div>
         ` : ''}
 
-        <!-- Relational Table Schemas (if any) -->
-        ${exp.schemas ? `
-          <div style="margin-bottom: 1.5rem; display: flex; flex-direction: column; gap: 0.75rem;">
-            <div style="font-size: 0.85rem; font-weight: 700; color: var(--text-primary); display: flex; align-items: center; gap: 0.4rem;">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/></svg>
-              Base Relations Schema Definition
-            </div>
-            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1rem;">
-              ${exp.schemas.map(s => `
-                <div style="background: var(--bg-surface-secondary); border: 1px solid var(--border-color); border-radius: var(--radius-sm); padding: 0.75rem;">
-                  <div style="font-weight: 700; font-family: var(--font-mono); font-size: 0.8rem; color: var(--brand-primary); margin-bottom: 0.4rem;">${s.name}</div>
-                  <pre style="font-family: var(--font-mono); font-size: 0.75rem; background: var(--code-bg); color: var(--code-text); padding: 0.5rem; border-radius: 4px; overflow-x: auto; margin: 0;">${escapeHtml(s.sql)}</pre>
-                </div>
-              `).join('')}
-            </div>
-          </div>
-        ` : ''}
-
-        <!-- Queries & Outputs List -->
+        <!-- Program Code & Terminal Execution Outputs -->
         <div class="queries-container">
-          ${exp.items ? exp.items.map(item => renderQueryCard(item, exp, searchQuery)).join('') : ''}
+          ${exp.items ? exp.items.map(item => renderProgramCard(item, exp, searchQuery)).join('') : ''}
         </div>
       </div>
     </section>
   `;
 }
 
-// Render Single Query & Output Card
-function renderQueryCard(item, exp, searchQuery) {
-  const escapedSql = escapeHtml(item.sql);
+// Render Single Program Card
+function renderProgramCard(item, exp, searchQuery) {
+  const rawCode = item.code || '';
+  const escapedCode = escapeHtml(rawCode);
 
   return `
     <div class="query-card" id="${item.id}">
@@ -299,20 +255,20 @@ function renderQueryCard(item, exp, searchQuery) {
           <span class="query-type-badge">${item.type}</span>
         </div>
         <div class="query-actions">
-          <button class="btn-query-action btn-copy" onclick="copySqlToClipboard(this, \`${escapedSql}\`)">
+          <button class="btn-query-action btn-copy" onclick="copyCodeToClipboard(this, \`${escapeJsString(rawCode)}\`)">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
-            <span>Copy SQL</span>
+            <span>Copy C Code</span>
           </button>
-          <button class="btn-query-action" onclick="openSandboxWithQuery(\`${escapedSql}\`)">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"/></svg>
-            <span>Try in Sandbox</span>
+          <button class="btn-query-action" onclick="openSimulatorWithExp('${exp.id}')">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+            <span>Run in Simulator</span>
           </button>
         </div>
       </div>
 
-      <!-- Split Layout: Code on Left, Output Screenshot on Right -->
+      <!-- Split Layout: Code on Left, Real Screenshot / Terminal on Right -->
       <div class="query-content-grid">
-        <!-- Left: SQL Query Code Pane -->
+        <!-- Left: C Code Pane -->
         <div class="query-code-pane">
           <div class="code-header-bar">
             <div class="code-dots">
@@ -320,22 +276,22 @@ function renderQueryCard(item, exp, searchQuery) {
               <span class="code-dot dot-yellow"></span>
               <span class="code-dot dot-green"></span>
             </div>
-            <span>Oracle SQL Command</span>
+            <span>${exp.title} • C Source Code (ANSI C)</span>
           </div>
-          <pre class="query-code-pre"><code>${highlightSQL(item.sql)}</code></pre>
+          <pre class="query-code-pre"><code>${highlightCCode(rawCode)}</code></pre>
           <div class="query-desc-box">
             ${highlightSearchTerm(item.description, searchQuery)}
           </div>
         </div>
 
-        <!-- Right: Execution Output & Real Screenshot Pane -->
+        <!-- Right: Execution Output Pane -->
         <div class="query-output-pane">
           <div class="output-header-bar">
             <div class="output-tabs">
               <button class="output-tab-btn active" onclick="switchOutputTab(this, 'screenshot')">Actual Screenshot</button>
-              <button class="output-tab-btn" onclick="switchOutputTab(this, 'data')">Tabular Data</button>
+              <button class="output-tab-btn" onclick="switchOutputTab(this, 'terminal')">Console View</button>
             </div>
-            <span class="output-status-pill">${escapeHtml(item.status || 'Statement processed')}</span>
+            <span class="output-status-pill">${escapeHtml(item.status || 'Execution verified')}</span>
           </div>
 
           <div class="output-body">
@@ -353,9 +309,15 @@ function renderQueryCard(item, exp, searchQuery) {
               </div>
             </div>
 
-            <!-- Tabular View -->
-            <div class="tab-pane-data" style="display: none;">
-              ${renderTabularOutput(item.outputType, item.outputData)}
+            <!-- Formatted Terminal View -->
+            <div class="tab-pane-terminal" style="display: none;">
+              <div class="terminal-console-box">
+                <div class="terminal-header">
+                  <span>Turbo C++ / GCC Terminal Console</span>
+                  <span class="terminal-tag">Execution Log</span>
+                </div>
+                <div class="terminal-content">${renderFormattedTerminal(item.terminalOutput)}</div>
+              </div>
             </div>
           </div>
         </div>
@@ -364,48 +326,13 @@ function renderQueryCard(item, exp, searchQuery) {
   `;
 }
 
-// Render Structured Output (Tables or Messages)
-function renderTabularOutput(type, data) {
-  if (!data) {
-    return `<div class="oracle-message-box">Statement executed successfully.</div>`;
-  }
-
-  if (type === 'message') {
-    return `
-      <div class="oracle-message-box">
-        <strong>Oracle Result:</strong> ${escapeHtml(data.message)}
-      </div>
-    `;
-  }
-
-  if ((type === 'table' || type === 'schema') && data.headers && data.rows) {
-    return `
-      <div class="table-responsive">
-        <table class="oracle-table">
-          <thead>
-            <tr>
-              ${data.headers.map(h => `<th>${escapeHtml(h)}</th>`).join('')}
-            </tr>
-          </thead>
-          <tbody>
-            ${data.rows.map(row => `
-              <tr>
-                ${row.map(cell => `<td>${escapeHtml(cell)}</td>`).join('')}
-              </tr>
-            `).join('')}
-          </tbody>
-        </table>
-      </div>
-      <div style="font-size: 0.7rem; color: var(--text-muted); margin-top: 0.5rem; text-align: right;">
-        ${data.rows.length} rows returned
-      </div>
-    `;
-  }
-
-  return `<div class="oracle-message-box">Output rendered in screenshot.</div>`;
+// Format Terminal Output with Input Highlights
+function renderFormattedTerminal(output) {
+  if (!output) return 'No console output logged.';
+  return escapeHtml(output);
 }
 
-// Output Tab Switcher (Screenshot vs Data Table)
+// Switch between Screenshot and Terminal Tab
 function switchOutputTab(btn, tabType) {
   const queryOutputPane = btn.closest('.query-output-pane');
   const tabs = queryOutputPane.querySelectorAll('.output-tab-btn');
@@ -413,25 +340,20 @@ function switchOutputTab(btn, tabType) {
   btn.classList.add('active');
 
   const screenshotPane = queryOutputPane.querySelector('.tab-pane-screenshot');
-  const dataPane = queryOutputPane.querySelector('.tab-pane-data');
+  const terminalPane = queryOutputPane.querySelector('.tab-pane-terminal');
 
   if (tabType === 'screenshot') {
     screenshotPane.style.display = 'block';
-    dataPane.style.display = 'none';
+    terminalPane.style.display = 'none';
   } else {
     screenshotPane.style.display = 'none';
-    dataPane.style.display = 'block';
+    terminalPane.style.display = 'block';
   }
 }
 
 // Copy Code to Clipboard
-function copySqlToClipboard(btn, text) {
-  // Decode HTML entities if present
-  const txtArea = document.createElement('textarea');
-  txtArea.innerHTML = text;
-  const decodedText = txtArea.value;
-
-  navigator.clipboard.writeText(decodedText).then(() => {
+function copyCodeToClipboard(btn, text) {
+  navigator.clipboard.writeText(text).then(() => {
     const span = btn.querySelector('span');
     const originalText = span.textContent;
     btn.classList.add('copied');
@@ -442,223 +364,121 @@ function copySqlToClipboard(btn, text) {
       span.textContent = originalText;
     }, 2000);
   }).catch(err => {
-    console.error('Failed to copy SQL:', err);
+    console.error('Failed to copy code:', err);
   });
 }
 
-// Smooth Scroll with Header Offset
-function smoothScrollTo(elementId, event) {
-  if (event) event.preventDefault();
-  const el = document.getElementById(elementId);
-  if (!el) return;
-
-  const headerOffset = 80;
-  const elementPosition = el.getBoundingClientRect().top;
-  const offsetPosition = elementPosition + window.pageYOffset - headerOffset;
-
-  window.scrollTo({
-    top: offsetPosition,
-    behavior: 'smooth'
-  });
-
-  // Close mobile sidebar if open
-  document.getElementById('sidebar')?.classList.remove('open');
+// Helper to escape raw string into JS attribute string
+function escapeJsString(str) {
+  return str.replace(/\\/g, '\\\\').replace(/`/g, '\\`').replace(/\$/g, '\\$');
 }
 
-// Lightbox Modal Logic
+// Lightbox Modal Controls
 function collectLightboxImages() {
   state.lightbox.images = [];
-  EXPERIMENTS_DATA.forEach(exp => {
-    if (exp.fullPages) {
-      exp.fullPages.forEach(p => {
-        state.lightbox.images.push({
-          src: p.image,
-          title: `Experiment ${exp.number}: ${exp.title} - Page ${p.page}`,
-          caption: p.title
-        });
-      });
-    }
-    if (exp.items) {
-      exp.items.forEach(item => {
-        if (item.image) {
-          state.lightbox.images.push({
-            src: item.image,
-            title: `Exp ${exp.number} • ${item.title}`,
-            caption: item.imageCaption || item.description
-          });
-        }
+  document.querySelectorAll('.screenshot-container, .page-thumb-card').forEach(el => {
+    const img = el.querySelector('img');
+    if (img && img.src) {
+      const caption = el.getAttribute('onclick')?.match(/openLightboxImage\('([^']+)',\s*'([^']+)'\)/);
+      state.lightbox.images.push({
+        src: img.src,
+        title: caption ? caption[2] : img.alt || 'Document Image'
       });
     }
   });
 }
 
-function openLightboxImage(src, caption) {
-  const index = state.lightbox.images.findIndex(img => img.src === src);
-  state.lightbox.currentIndex = index !== -1 ? index : 0;
+function openLightboxImage(src, title) {
+  const modal = document.getElementById('lightbox-modal');
+  const imgEl = document.getElementById('lightbox-img');
+  const titleEl = document.getElementById('lightbox-title');
+  const captionEl = document.getElementById('lightbox-caption');
+  const counterEl = document.getElementById('lightbox-counter');
+
   state.lightbox.zoom = 1;
   state.lightbox.isOpen = true;
 
-  updateLightboxContent();
-  document.getElementById('lightbox-modal').classList.add('active');
+  const idx = state.lightbox.images.findIndex(item => item.src.endsWith(src) || src.endsWith(item.src));
+  state.lightbox.currentIndex = idx >= 0 ? idx : 0;
+
+  imgEl.src = src;
+  imgEl.style.transform = `scale(${state.lightbox.zoom})`;
+  titleEl.textContent = title || 'Lab Journal Document';
+  captionEl.textContent = title || '';
+  counterEl.textContent = `${state.lightbox.currentIndex + 1} / ${state.lightbox.images.length}`;
+
+  modal.classList.add('active');
   document.body.style.overflow = 'hidden';
 }
 
 function closeLightbox() {
+  const modal = document.getElementById('lightbox-modal');
+  modal.classList.remove('active');
   state.lightbox.isOpen = false;
-  document.getElementById('lightbox-modal').classList.remove('active');
   document.body.style.overflow = '';
 }
 
-function navigateLightbox(direction) {
-  const total = state.lightbox.images.length;
-  if (total === 0) return;
-  state.lightbox.currentIndex = (state.lightbox.currentIndex + direction + total) % total;
-  state.lightbox.zoom = 1;
-  updateLightboxContent();
-}
-
-function updateLightboxContent() {
+function navigateLightbox(dir) {
+  if (state.lightbox.images.length === 0) return;
+  state.lightbox.currentIndex = (state.lightbox.currentIndex + dir + state.lightbox.images.length) % state.lightbox.images.length;
   const current = state.lightbox.images[state.lightbox.currentIndex];
-  if (!current) return;
-
-  const img = document.getElementById('lightbox-img');
-  const title = document.getElementById('lightbox-title');
-  const counter = document.getElementById('lightbox-counter');
-  const caption = document.getElementById('lightbox-caption');
-
-  img.src = current.src;
-  img.style.transform = `scale(${state.lightbox.zoom})`;
-  title.textContent = current.title;
-  counter.textContent = `${state.lightbox.currentIndex + 1} / ${state.lightbox.images.length}`;
-  caption.textContent = current.caption;
+  openLightboxImage(current.src, current.title);
 }
 
 function zoomLightbox(delta) {
   state.lightbox.zoom = Math.max(0.5, Math.min(3, state.lightbox.zoom + delta));
-  const img = document.getElementById('lightbox-img');
-  if (img) img.style.transform = `scale(${state.lightbox.zoom})`;
+  const imgEl = document.getElementById('lightbox-img');
+  if (imgEl) {
+    imgEl.style.transform = `scale(${state.lightbox.zoom})`;
+  }
 }
 
 function downloadCurrentLightboxImage() {
+  if (state.lightbox.images.length === 0) return;
   const current = state.lightbox.images[state.lightbox.currentIndex];
-  if (!current) return;
   const a = document.createElement('a');
   a.href = current.src;
-  a.download = current.src.split('/').pop() || 'dbms_output.png';
+  a.download = current.title.replace(/[^a-zA-Z0-9_-]/g, '_') + '.png';
   document.body.appendChild(a);
   a.click();
   document.body.removeChild(a);
 }
 
-// SQL Interactive Sandbox Engine
-function openSandboxWithQuery(query) {
-  const modal = document.getElementById('sandbox-modal-backdrop');
-  const textarea = document.getElementById('sandbox-sql-input');
-  if (textarea && query) {
-    textarea.value = query;
-  }
-  modal.classList.add('active');
-  document.body.style.overflow = 'hidden';
-  if (query) {
-    executeSandboxQuery();
+// Smooth Scroll to Experiment
+function smoothScrollTo(elementId, event) {
+  if (event) event.preventDefault();
+  const el = document.getElementById(elementId);
+  if (el) {
+    const yOffset = -90;
+    const y = el.getBoundingClientRect().top + window.pageYOffset + yOffset;
+    window.scrollTo({ top: y, behavior: 'smooth' });
+    history.replaceState(null, null, `#${elementId}`);
   }
 }
 
-function closeSandbox() {
-  const modal = document.getElementById('sandbox-modal-backdrop');
-  modal.classList.remove('active');
-  document.body.style.overflow = '';
-}
+// Setup ScrollSpy for TOC
+function setupScrollSpy() {
+  window.addEventListener('scroll', () => {
+    const sections = document.querySelectorAll('.experiment-section');
+    const scrollPos = window.scrollY + 120;
 
-function executeSandboxQuery() {
-  const input = document.getElementById('sandbox-sql-input').value.trim();
-  const resultArea = document.getElementById('sandbox-result-area');
-  if (!input) {
-    resultArea.innerHTML = `<div style="color: var(--text-muted); font-family: var(--font-mono);">Enter a SQL command to run.</div>`;
-    return;
-  }
+    sections.forEach(sec => {
+      const top = sec.offsetTop;
+      const height = sec.offsetHeight;
+      const id = sec.id;
 
-  // Simple simulated client-side query evaluator for DBMS demo
-  try {
-    const upperInput = input.toUpperCase();
-    
-    // Check which table is referenced
-    let targetTable = null;
-    let tableName = '';
-    for (const tbl in MOCK_DB) {
-      if (upperInput.includes(tbl.toUpperCase())) {
-        targetTable = MOCK_DB[tbl];
-        tableName = tbl;
-        break;
-      }
-    }
-
-    if (!targetTable) {
-      resultArea.innerHTML = `
-        <div style="color: var(--success); font-family: var(--font-mono);">
-          <strong>Statement processed.</strong><br>
-          <span style="font-size: 0.8rem; color: var(--text-muted);">Command executed in 0.01 seconds. In Oracle Live DB this creates/alters/grants objects as defined.</span>
-        </div>
-      `;
-      return;
-    }
-
-    // Basic SELECT projection & filtering
-    let rows = [...targetTable];
-    
-    // Simulate simple WHERE condition
-    if (upperInput.includes('WHERE')) {
-      const parts = input.split(/WHERE/i);
-      const condition = parts[1].trim();
-      
-      if (condition.includes('=')) {
-        const [col, val] = condition.split('=').map(s => s.trim().replace(/['";]/g, ''));
-        rows = rows.filter(r => {
-          const key = Object.keys(r).find(k => k.toUpperCase() === col.toUpperCase());
-          return key && String(r[key]).toLowerCase() === val.toLowerCase();
+      if (scrollPos >= top && scrollPos < top + height) {
+        document.querySelectorAll('.exp-nav-item').forEach(item => {
+          item.classList.toggle('active', item.dataset.expId === id);
         });
-      } else if (condition.includes('>')) {
-        const [col, val] = condition.split('>').map(s => s.trim().replace(/['";]/g, ''));
-        const numVal = parseFloat(val);
-        if (!isNaN(numVal)) {
-          rows = rows.filter(r => {
-            const key = Object.keys(r).find(k => k.toUpperCase() === col.toUpperCase());
-            return key && parseFloat(r[key]) > numVal;
-          });
-        }
       }
-    }
-
-    // Render result table
-    if (rows.length === 0) {
-      resultArea.innerHTML = `<div style="font-family: var(--font-mono); color: var(--warning);">No rows selected (0 rows returned).</div>`;
-      return;
-    }
-
-    const headers = Object.keys(rows[0]);
-    resultArea.innerHTML = `
-      <div style="font-size: 0.75rem; color: var(--text-muted); margin-bottom: 0.5rem; font-family: var(--font-mono);">
-        Table: <strong>${tableName}</strong> | ${rows.length} rows returned (Simulated Oracle Execution)
-      </div>
-      <div class="table-responsive">
-        <table class="oracle-table">
-          <thead>
-            <tr>${headers.map(h => `<th>${h}</th>`).join('')}</tr>
-          </thead>
-          <tbody>
-            ${rows.map(r => `<tr>${headers.map(h => `<td>${r[h] !== null ? escapeHtml(String(r[h])) : 'NULL'}</td>`).join('')}</tr>`).join('')}
-          </tbody>
-        </table>
-      </div>
-    `;
-  } catch (err) {
-    resultArea.innerHTML = `<div style="color: var(--danger); font-family: var(--font-mono);">ORA-00900: invalid SQL statement: ${err.message}</div>`;
-  }
+    });
+  }, { passive: true });
 }
 
-// Search and Filter Handlers
+// Event Listeners Initialization
 function setupEventListeners() {
-  // Theme Toggle Button
+  // Theme Toggle
   const themeBtn = document.getElementById('btn-toggle-theme');
   if (themeBtn) {
     themeBtn.addEventListener('click', () => {
@@ -666,34 +486,12 @@ function setupEventListeners() {
     });
   }
 
-  // Sidebar Toggle for Mobile
-  const sidebarBtn = document.getElementById('sidebar-toggle');
-  const sidebar = document.getElementById('sidebar');
-  if (sidebarBtn && sidebar) {
-    sidebarBtn.addEventListener('click', () => {
-      sidebar.classList.toggle('open');
+  // Layout View Buttons
+  document.querySelectorAll('.layout-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      applyLayoutView(btn.dataset.view);
     });
-  }
-
-  // Search Input
-  const searchInput = document.getElementById('global-search');
-  const searchClear = document.getElementById('search-clear');
-  if (searchInput) {
-    searchInput.addEventListener('input', (e) => {
-      state.searchQuery = e.target.value;
-      if (searchClear) searchClear.style.display = state.searchQuery ? 'block' : 'none';
-      renderExperiments();
-    });
-  }
-
-  if (searchClear) {
-    searchClear.addEventListener('click', () => {
-      searchInput.value = '';
-      state.searchQuery = '';
-      searchClear.style.display = 'none';
-      renderExperiments();
-    });
-  }
+  });
 
   // Category Filter Chips
   document.querySelectorAll('.filter-chip').forEach(chip => {
@@ -705,93 +503,580 @@ function setupEventListeners() {
     });
   });
 
-  // Layout View Buttons
-  document.querySelectorAll('.layout-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
-      applyLayoutView(btn.dataset.view);
-    });
-  });
+  // Search Input
+  const searchInput = document.getElementById('global-search');
+  const clearBtn = document.getElementById('search-clear');
 
-  // Global Keyboard Shortcuts
-  document.addEventListener('keydown', (e) => {
-    // Focus search on '/'
-    if (e.key === '/' && document.activeElement !== searchInput && !state.lightbox.isOpen) {
-      e.preventDefault();
-      searchInput?.focus();
-    }
-    
-    // Lightbox Controls
-    if (state.lightbox.isOpen) {
-      if (e.key === 'Escape') closeLightbox();
-      if (e.key === 'ArrowRight') navigateLightbox(1);
-      if (e.key === 'ArrowLeft') navigateLightbox(-1);
-      if (e.key === '+' || e.key === '=') zoomLightbox(0.25);
-      if (e.key === '-') zoomLightbox(-0.25);
-    }
-  });
+  if (searchInput) {
+    searchInput.addEventListener('input', (e) => {
+      state.searchQuery = e.target.value;
+      if (clearBtn) clearBtn.style.display = state.searchQuery ? 'block' : 'none';
+      renderExperiments();
+    });
+
+    // Keyboard shortcut: '/' to focus search
+    window.addEventListener('keydown', (e) => {
+      if (e.key === '/' && document.activeElement !== searchInput && !state.lightbox.isOpen) {
+        e.preventDefault();
+        searchInput.focus();
+        searchInput.select();
+      } else if (e.key === 'Escape') {
+        if (state.lightbox.isOpen) {
+          closeLightbox();
+        } else if (document.getElementById('simulator-modal-backdrop').classList.contains('active')) {
+          closeSimulator();
+        } else if (document.activeElement === searchInput) {
+          searchInput.blur();
+        }
+      } else if (state.lightbox.isOpen) {
+        if (e.key === 'ArrowRight') navigateLightbox(1);
+        if (e.key === 'ArrowLeft') navigateLightbox(-1);
+        if (e.key === '+' || e.key === '=') zoomLightbox(0.25);
+        if (e.key === '-') zoomLightbox(-0.25);
+      }
+    });
+  }
+
+  if (clearBtn) {
+    clearBtn.addEventListener('click', () => {
+      if (searchInput) searchInput.value = '';
+      state.searchQuery = '';
+      clearBtn.style.display = 'none';
+      renderExperiments();
+    });
+  }
+
+  // Sidebar Mobile Toggle
+  const sidebarToggle = document.getElementById('sidebar-toggle');
+  const sidebar = document.getElementById('sidebar');
+  if (sidebarToggle && sidebar) {
+    sidebarToggle.addEventListener('click', () => {
+      sidebar.classList.toggle('open');
+    });
+  }
 }
 
+// Reset All Filters
 function resetFilters() {
-  state.searchQuery = '';
   state.currentCategory = 'ALL';
+  state.searchQuery = '';
   const searchInput = document.getElementById('global-search');
   if (searchInput) searchInput.value = '';
+  const clearBtn = document.getElementById('search-clear');
+  if (clearBtn) clearBtn.style.display = 'none';
+
   document.querySelectorAll('.filter-chip').forEach(c => {
     c.classList.toggle('active', c.dataset.category === 'ALL');
   });
+
   renderExperiments();
 }
 
-// Scroll Spy to highlight active experiment in sidebar
-function setupScrollSpy() {
-  const sections = document.querySelectorAll('.experiment-section');
-  const navItems = document.querySelectorAll('.exp-nav-item');
-
-  window.addEventListener('scroll', () => {
-    let current = '';
-    const scrollPos = window.pageYOffset + 120;
-
-    sections.forEach(section => {
-      const top = section.offsetTop;
-      const height = section.offsetHeight;
-      if (scrollPos >= top && scrollPos < top + height) {
-        current = section.getAttribute('id');
-      }
-    });
-
-    navItems.forEach(item => {
-      item.classList.remove('active');
-      if (item.dataset.expId === current) {
-        item.classList.add('active');
-      }
-    });
-  }, { passive: true });
-}
-
-// Utilities
-function escapeHtml(str) {
-  if (!str) return '';
-  return str
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#039;');
-}
-
-function highlightSearchTerm(text, term) {
-  if (!term || !text) return escapeHtml(text);
-  const escaped = escapeHtml(text);
-  const regex = new RegExp(`(${escapeRegex(term)})`, 'gi');
-  return escaped.replace(regex, '<mark style="background: var(--text-primary); color: var(--bg-surface); padding: 0 3px; border-radius: 2px; font-weight: 700;">$1</mark>');
-}
-
-function escapeRegex(string) {
-  return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-}
-
-// Print Handler
+// Print Journal Function
 function triggerPrintJournal() {
   window.print();
 }
 
+// Helper: Escape HTML
+function escapeHtml(text) {
+  if (!text) return '';
+  const map = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' };
+  return String(text).replace(/[&<>"']/g, m => map[m]);
+}
+
+// Helper: Highlight Search Terms
+function highlightSearchTerm(text, query) {
+  if (!query || !text) return escapeHtml(text);
+  const escaped = escapeHtml(text);
+  const regex = new RegExp(`(${query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi');
+  return escaped.replace(regex, '<mark class="search-highlight">$1</mark>');
+}
+
+/* ===================================================================
+   Interactive Algorithm Simulator & Visualizer
+   Replaces SQL sandbox with comprehensive in-browser algorithm execution
+   =================================================================== */
+
+function initSimulatorControls() {
+  selectSimulatorAlgorithm('exp-1');
+}
+
+function openSimulatorWithExp(expId) {
+  const modal = document.getElementById('simulator-modal-backdrop');
+  modal.classList.add('active');
+  document.body.style.overflow = 'hidden';
+  selectSimulatorAlgorithm(expId);
+}
+
+function closeSimulator() {
+  const modal = document.getElementById('simulator-modal-backdrop');
+  modal.classList.remove('active');
+  document.body.style.overflow = '';
+}
+
+function selectSimulatorAlgorithm(expId) {
+  state.simulator.selectedAlgorithm = expId;
+
+  // Update preset chips
+  document.querySelectorAll('.sandbox-preset-chip').forEach(chip => {
+    chip.classList.toggle('active', chip.dataset.exp === expId);
+  });
+
+  const config = ALGORITHM_PRESETS[expId];
+  const inputContainer = document.getElementById('simulator-inputs');
+  if (!inputContainer || !config) return;
+
+  let html = `
+    <div style="font-weight: 700; font-size: 0.95rem; color: var(--text-primary); margin-bottom: 0.25rem;">
+      ${config.name}
+    </div>
+    <div style="font-size: 0.75rem; color: var(--text-muted); margin-bottom: 0.75rem;">
+      ${config.description}
+    </div>
+  `;
+
+  if (expId === 'exp-1' || expId === 'exp-3' || expId === 'exp-4') {
+    html += `
+      <div style="display: flex; flex-direction: column; gap: 0.4rem;">
+        <label style="font-size: 0.75rem; font-weight: 600; color: var(--text-secondary);">${config.inputLabel}</label>
+        <input type="text" id="sim-array-input" class="sandbox-textarea" style="height: 42px; padding: 0.5rem 0.75rem;" value="${config.defaultInput}">
+      </div>
+    `;
+  } else if (expId === 'exp-2') {
+    html += `
+      <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 0.75rem;">
+        <div style="display: flex; flex-direction: column; gap: 0.4rem;">
+          <label style="font-size: 0.75rem; font-weight: 600; color: var(--text-secondary);">${config.inputLabel}</label>
+          <input type="text" id="sim-array-input" class="sandbox-textarea" style="height: 42px; padding: 0.5rem 0.75rem;" value="${config.defaultInput}">
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 0.4rem;">
+          <label style="font-size: 0.75rem; font-weight: 600; color: var(--text-secondary);">${config.keyLabel}</label>
+          <input type="text" id="sim-key-input" class="sandbox-textarea" style="height: 42px; padding: 0.5rem 0.75rem;" value="${config.defaultKey}">
+        </div>
+      </div>
+    `;
+  } else if (expId === 'exp-5') {
+    html += `
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem;">
+        <div style="display: flex; flex-direction: column; gap: 0.4rem;">
+          <label style="font-size: 0.75rem; font-weight: 600; color: var(--text-secondary);">Items [Profit, Weight] pairs:</label>
+          <input type="text" id="sim-knapsack-items" class="sandbox-textarea" style="height: 42px; padding: 0.5rem 0.75rem;" value="20:30, 10:100, 50:90">
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 0.4rem;">
+          <label style="font-size: 0.75rem; font-weight: 600; color: var(--text-secondary);">Knapsack Capacity:</label>
+          <input type="number" id="sim-knapsack-capacity" class="sandbox-textarea" style="height: 42px; padding: 0.5rem 0.75rem;" value="${config.capacity}">
+        </div>
+      </div>
+    `;
+  } else if (expId === 'exp-6') {
+    html += `
+      <div style="display: flex; flex-direction: column; gap: 0.4rem;">
+        <label style="font-size: 0.75rem; font-weight: 600; color: var(--text-secondary);">Cost Adjacency Matrix (${config.vertices} vertices, 0 = no edge):</label>
+        <textarea id="sim-kruskal-matrix" class="sandbox-textarea" style="height: 90px; padding: 0.5rem 0.75rem;">0 12 5 10
+9 10 0 0
+6 0 5 7
+10 5 16 15</textarea>
+      </div>
+    `;
+  } else if (expId === 'exp-7') {
+    html += `
+      <div style="font-size: 0.8rem; color: var(--text-secondary);">
+        Solves the classic <strong>4-Queen Problem</strong> on a 4x4 chessboard using recursive backtracking. Displays all complete non-attacking solutions with ASCII chessboard drawings.
+      </div>
+    `;
+  } else if (expId === 'exp-8') {
+    html += `
+      <div style="display: grid; grid-template-columns: 1fr 2fr; gap: 0.75rem;">
+        <div style="display: flex; flex-direction: column; gap: 0.4rem;">
+          <label style="font-size: 0.75rem; font-weight: 600; color: var(--text-secondary);">Max Colors (m):</label>
+          <input type="number" id="sim-color-m" class="sandbox-textarea" style="height: 42px; padding: 0.5rem 0.75rem;" value="3">
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 0.4rem;">
+          <label style="font-size: 0.75rem; font-weight: 600; color: var(--text-secondary);">Adjacency Matrix (4 vertices):</label>
+          <textarea id="sim-color-matrix" class="sandbox-textarea" style="height: 90px; padding: 0.5rem 0.75rem;">0 1 1 1
+1 0 1 0
+1 1 0 1
+1 0 1 0</textarea>
+        </div>
+      </div>
+    `;
+  } else if (expId === 'exp-9') {
+    html += `
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem;">
+        <div style="display: flex; flex-direction: column; gap: 0.4rem;">
+          <label style="font-size: 0.75rem; font-weight: 600; color: var(--text-secondary);">First String (X):</label>
+          <input type="text" id="sim-lcs-x" class="sandbox-textarea" style="height: 42px; padding: 0.5rem 0.75rem;" value="${config.str1}">
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 0.4rem;">
+          <label style="font-size: 0.75rem; font-weight: 600; color: var(--text-secondary);">Second String (Y):</label>
+          <input type="text" id="sim-lcs-y" class="sandbox-textarea" style="height: 42px; padding: 0.5rem 0.75rem;" value="${config.str2}">
+        </div>
+      </div>
+    `;
+  }
+
+  inputContainer.innerHTML = html;
+  executeSimulatorAlgorithm();
+}
+
+// Execute the chosen algorithm in JS and print realistic Turbo C console output
+function executeSimulatorAlgorithm() {
+  const expId = state.simulator.selectedAlgorithm;
+  const resultArea = document.getElementById('simulator-result-area');
+  if (!resultArea) return;
+
+  let log = '';
+
+  try {
+    switch (expId) {
+      case 'exp-1': {
+        const inputStr = document.getElementById('sim-array-input')?.value || '9, 3, 6, 1, 7, 2';
+        const arr = inputStr.split(/[\s,]+/).filter(x => x.length > 0).map(Number);
+        const n = arr.length;
+        log += `Enter the number of elements: ${n}\n`;
+        log += `Enter ${n} elements:\n` + arr.join('\n') + '\n\n';
+
+        // Insertion Sort
+        for (let i = 1; i < n; i++) {
+          let key = arr[i];
+          let j = i - 1;
+          while (j >= 0 && arr[j] > key) {
+            arr[j + 1] = arr[j];
+            j--;
+          }
+          arr[j + 1] = key;
+        }
+
+        log += `Sorted array in ascending order:\n${arr.join(' ')}\n\nProcess completed in O(n²) worst-case time.`;
+        break;
+      }
+
+      case 'exp-2': {
+        const inputStr = document.getElementById('sim-array-input')?.value || '10, 20, 30, 50, 60, 80';
+        const key = Number(document.getElementById('sim-key-input')?.value ?? 50);
+        const arr = inputStr.split(/[\s,]+/).filter(x => x.length > 0).map(Number);
+        const n = arr.length;
+
+        log += `Enter the number of elements: ${n}\n`;
+        log += `Enter ${n} elements in sorted order:\n` + arr.join('\n') + '\n';
+        log += `Enter the element to search: ${key}\n\n`;
+
+        let low = 0, high = n - 1, mid = -1, found = false;
+        while (low <= high) {
+          mid = Math.floor((low + high) / 2);
+          if (arr[mid] === key) {
+            found = true;
+            break;
+          } else if (key < arr[mid]) {
+            high = mid - 1;
+          } else {
+            low = mid + 1;
+          }
+        }
+
+        if (found) {
+          log += `Element found at position ${mid + 1}\n(0-based index: ${mid})`;
+        } else {
+          log += `Element not found.`;
+        }
+        break;
+      }
+
+      case 'exp-3': {
+        const inputStr = document.getElementById('sim-array-input')?.value || '13, 24, 56, 76, 45, 56';
+        const arr = inputStr.split(/[\s,]+/).filter(x => x.length > 0).map(Number);
+        const n = arr.length;
+
+        log += `Enter the number of elements: ${n}\n`;
+        log += `Enter ${n} elements:\n` + arr.join('\n') + '\n\n';
+
+        function merge(a, low, mid, high) {
+          let temp = [];
+          let i = low, j = mid + 1;
+          while (i <= mid && j <= high) {
+            if (a[i] < a[j]) temp.push(a[i++]);
+            else temp.push(a[j++]);
+          }
+          while (i <= mid) temp.push(a[i++]);
+          while (j <= high) temp.push(a[j++]);
+          for (let k = 0; k < temp.length; k++) {
+            a[low + k] = temp[k];
+          }
+        }
+
+        function mergeSort(a, low, high) {
+          if (low < high) {
+            let mid = Math.floor((low + high) / 2);
+            mergeSort(a, low, mid);
+            mergeSort(a, mid + 1, high);
+            merge(a, low, mid, high);
+          }
+        }
+
+        mergeSort(arr, 0, n - 1);
+        log += `Sorted array using Merge Sort:\n${arr.join(' ')}\n\nGuaranteed O(n log n) divide-and-conquer execution.`;
+        break;
+      }
+
+      case 'exp-4': {
+        const inputStr = document.getElementById('sim-array-input')?.value || '23, 443, 12, 4, 56, 78';
+        const arr = inputStr.split(/[\s,]+/).filter(x => x.length > 0).map(Number);
+        const n = arr.length;
+
+        log += `Enter the number of elements: ${n}\n`;
+        log += `Enter ${n} elements:\n` + arr.join('\n') + '\n\n';
+
+        function quicksort(a, low, high) {
+          if (low < high) {
+            let pivot = a[low];
+            let i = low + 1;
+            let j = high;
+            while (i <= j) {
+              while (i <= high && a[i] <= pivot) i++;
+              while (a[j] > pivot) j--;
+              if (i < j) {
+                let temp = a[i]; a[i] = a[j]; a[j] = temp;
+              }
+            }
+            a[low] = a[j];
+            a[j] = pivot;
+            quicksort(a, low, j - 1);
+            quicksort(a, j + 1, high);
+          }
+        }
+
+        quicksort(arr, 0, n - 1);
+        log += `Sorted array using Quick Sort:\n${arr.join(' ')}\n\nIn-place partition-exchange completed.`;
+        break;
+      }
+
+      case 'exp-5': {
+        const itemsStr = document.getElementById('sim-knapsack-items')?.value || '20:30, 10:100, 50:90';
+        let capacity = Number(document.getElementById('sim-knapsack-capacity')?.value || 60);
+
+        const items = itemsStr.split(',').map((pair, idx) => {
+          const [p, w] = pair.trim().split(':').map(Number);
+          return { id: idx + 1, profit: p, weight: w, ratio: p / w };
+        });
+
+        const n = items.length;
+        log += `Enter number of items: ${n}\n`;
+        items.forEach(it => {
+          log += `\nEnter Profit and Weight of item ${it.id}: ${it.profit} ${it.weight} (Ratio = ${it.ratio.toFixed(2)})`;
+        });
+        log += `\n\nEnter Knapsack Capacity: ${capacity}\n\n`;
+
+        // Sort descending by ratio
+        items.sort((a, b) => b.ratio - a.ratio);
+
+        let totalProfit = 0;
+        log += `Selected Items:\n`;
+        for (let i = 0; i < n; i++) {
+          if (capacity >= items[i].weight) {
+            log += `Take Item ${i + 1} completely\n`;
+            capacity -= items[i].weight;
+            totalProfit += items[i].profit;
+          } else {
+            let frac = capacity / items[i].weight;
+            log += `Take ${frac.toFixed(2)} fraction of Item ${i + 1}\n`;
+            totalProfit += items[i].profit * frac;
+            break;
+          }
+        }
+        log += `\nMaximum Profit = ${totalProfit.toFixed(2)}`;
+        break;
+      }
+
+      case 'exp-6': {
+        const matrixStr = document.getElementById('sim-kruskal-matrix')?.value || '0 12 5 10\n9 10 0 0\n6 0 5 7\n10 5 16 15';
+        const lines = matrixStr.trim().split('\n');
+        const n = lines.length;
+        let cost = [];
+        for (let i = 0; i < n; i++) {
+          cost[i + 1] = [];
+          let row = lines[i].trim().split(/\s+/).map(Number);
+          for (let j = 0; j < n; j++) {
+            let val = row[j];
+            cost[i + 1][j + 1] = (val === 0) ? 999 : val;
+          }
+        }
+
+        let parent = [];
+        for (let i = 1; i <= n; i++) parent[i] = i;
+
+        function find(i) {
+          while (parent[i] !== i) i = parent[i];
+          return i;
+        }
+        function uni(i, j) {
+          parent[i] = j;
+        }
+
+        log += `Enter the number of vertices: ${n}\n`;
+        log += `Enter the cost adjacency matrix:\n${matrixStr}\n\n`;
+        log += `Edges in the Minimum Spanning Tree:\n`;
+
+        let ne = 1, mincost = 0;
+        while (ne < n) {
+          let min = 999, a = 0, b = 0, u = 0, v = 0;
+          for (let i = 1; i <= n; i++) {
+            for (let j = 1; j <= n; j++) {
+              if (cost[i][j] < min) {
+                min = cost[i][j];
+                a = u = i;
+                b = v = j;
+              }
+            }
+          }
+          u = find(u);
+          v = find(v);
+          if (u !== v) {
+            log += `${ne++} Edge (${a},${b}) = ${min}\n`;
+            mincost += min;
+            uni(u, v);
+          }
+          cost[a][b] = cost[b][a] = 999;
+        }
+        log += `\nMinimum Cost = ${mincost}`;
+        break;
+      }
+
+      case 'exp-7': {
+        log += `4-QUEEN PROBLEM\n================\n`;
+        let x = [];
+        let count = 0;
+
+        function place(k, i) {
+          for (let j = 0; j < k; j++) {
+            if (x[j] === i || Math.abs(x[j] - i) === Math.abs(j - k)) {
+              return false;
+            }
+          }
+          return true;
+        }
+
+        function display() {
+          log += `\nSolution ${count}:\n`;
+          for (let i = 0; i < 4; i++) {
+            log += `+---+---+---+---+\n`;
+            for (let j = 0; j < 4; j++) {
+              if (x[i] === j) log += `| Q `;
+              else log += `|   `;
+            }
+            log += `|\n`;
+          }
+          log += `+---+---+---+---+\n`;
+        }
+
+        function nqueen(k) {
+          for (let i = 0; i < 4; i++) {
+            if (place(k, i)) {
+              x[k] = i;
+              if (k === 3) {
+                count++;
+                display();
+              } else {
+                nqueen(k + 1);
+              }
+            }
+          }
+        }
+
+        nqueen(0);
+        log += `\nTotal Solutions = ${count}`;
+        break;
+      }
+
+      case 'exp-8': {
+        const m = Number(document.getElementById('sim-color-m')?.value || 3);
+        const matrixStr = document.getElementById('sim-color-matrix')?.value || '0 1 1 1\n1 0 1 0\n1 1 0 1\n1 0 1 0';
+        const lines = matrixStr.trim().split('\n');
+        const n = lines.length;
+        let graph = [];
+        for (let i = 0; i < n; i++) {
+          graph[i] = lines[i].trim().split(/\s+/).map(Number);
+        }
+        let color = new Array(n).fill(0);
+
+        function isSafe(v, c) {
+          for (let i = 0; i < n; i++) {
+            if (graph[v][i] === 1 && color[i] === c) return false;
+          }
+          return true;
+        }
+
+        function graphColoring(v) {
+          if (v === n) return true;
+          for (let c = 1; c <= m; c++) {
+            if (isSafe(v, c)) {
+              color[v] = c;
+              if (graphColoring(v + 1)) return true;
+              color[v] = 0;
+            }
+          }
+          return false;
+        }
+
+        log += `Enter number of vertices: ${n}\nEnter number of colors: ${m}\n\nEnter the adjacency matrix:\n${matrixStr}\n\n`;
+        if (graphColoring(0)) {
+          log += `Graph can be colored using ${m} colors.\n\nVertex\tColor\n`;
+          for (let i = 0; i < n; i++) {
+            log += `${i + 1}\t${color[i]}\n`;
+          }
+        } else {
+          log += `Graph cannot be colored using ${m} colors.`;
+        }
+        break;
+      }
+
+      case 'exp-9': {
+        const X = document.getElementById('sim-lcs-x')?.value || 'ABCDEF';
+        const Y = document.getElementById('sim-lcs-y')?.value || 'ACEAF';
+        const m = X.length;
+        const n = Y.length;
+
+        log += `Enter first string: ${X}\nEnter second string: ${Y}\n\n`;
+
+        // 2D DP table
+        let L = Array.from({ length: m + 1 }, () => new Array(n + 1).fill(0));
+        for (let i = 0; i <= m; i++) {
+          for (let j = 0; j <= n; j++) {
+            if (i === 0 || j === 0) L[i][j] = 0;
+            else if (X[i - 1] === Y[j - 1]) L[i][j] = L[i - 1][j - 1] + 1;
+            else L[i][j] = Math.max(L[i - 1][j], L[i][j - 1]);
+          }
+        }
+
+        log += `Length of LCS = ${L[m][n]}\n`;
+
+        // Backtrack LCS
+        let lcsArr = [];
+        let i = m, j = n;
+        while (i > 0 && j > 0) {
+          if (X[i - 1] === Y[j - 1]) {
+            lcsArr.unshift(X[i - 1]);
+            i--; j--;
+          } else if (L[i - 1][j] > L[i][j - 1]) {
+            i--;
+          } else {
+            j--;
+          }
+        }
+        log += `LCS = ${lcsArr.join('')}\n\n...Program finished with exit code 255\nPress ENTER to exit console.`;
+        break;
+      }
+    }
+  } catch (err) {
+    log = `Error executing algorithm: ${err.message}`;
+  }
+
+  resultArea.innerHTML = `
+    <div class="terminal-console-box">
+      <div class="terminal-header">
+        <span>C Runtime Standard Output (stdout)</span>
+        <span class="terminal-tag">Status: 200 OK</span>
+      </div>
+      <div style="font-family: var(--font-mono); font-size: 0.825rem; white-space: pre-wrap;">${escapeHtml(log)}</div>
+    </div>
+  `;
+}

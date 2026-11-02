@@ -994,37 +994,145 @@ body {
 }
 
 /* Monochrome Syntax Highlighting */
-.sql-keyword {
+.sql-keyword,
+.c-keyword {
   color: #ffffff;
   font-weight: 800;
   letter-spacing: 0.02em;
 }
 
-.sql-function {
+.c-preprocessor {
+  color: #e4e4e7;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+}
+
+.sql-function,
+.c-function {
   color: #e4e4e7;
   font-weight: 700;
   text-decoration: underline;
   text-decoration-color: #52525b;
 }
 
-.sql-type {
+.sql-type,
+.c-type {
   color: #a1a1aa;
   font-weight: 600;
 }
 
-.sql-string {
+.sql-string,
+.c-string {
   color: #d4d4d8;
   font-style: italic;
 }
 
-.sql-number {
+.sql-number,
+.c-number {
   color: #f4f4f5;
   font-weight: 700;
 }
 
-.sql-comment {
+.sql-comment,
+.c-comment {
   color: #71717a;
   font-style: italic;
+}
+
+/* Terminal Console View & Output Box */
+.terminal-console-box {
+  background: #09090b;
+  border: 1px solid #27272a;
+  border-radius: var(--radius-sm);
+  padding: 1.1rem;
+  font-family: var(--font-mono);
+  font-size: 0.825rem;
+  color: #f4f4f5;
+  line-height: 1.6;
+  white-space: pre-wrap;
+  overflow-x: auto;
+  box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.6);
+  position: relative;
+}
+
+.terminal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-bottom: 0.5rem;
+  margin-bottom: 0.75rem;
+  border-bottom: 1px solid #27272a;
+  font-size: 0.7rem;
+  color: #71717a;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-family: var(--font-mono);
+}
+
+.terminal-input-highlight {
+  color: #ffffff;
+  font-weight: 800;
+  background: rgba(255, 255, 255, 0.1);
+  padding: 0 4px;
+  border-radius: 2px;
+}
+
+.terminal-tag {
+  display: inline-block;
+  padding: 2px 6px;
+  font-size: 0.65rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  border-radius: 3px;
+  background: #27272a;
+  color: #a1a1aa;
+  border: 1px solid #3f3f46;
+}
+
+/* Complexity Grid & Metrics */
+.complexity-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+  gap: 0.6rem;
+  margin-top: 0.9rem;
+  margin-bottom: 0.5rem;
+}
+
+.complexity-card {
+  background: var(--bg-surface-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  padding: 0.6rem 0.8rem;
+  display: flex;
+  flex-direction: column;
+}
+
+.complexity-label {
+  font-size: 0.65rem;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  font-weight: 700;
+  letter-spacing: 0.05em;
+}
+
+.complexity-value {
+  font-family: var(--font-mono);
+  font-size: 0.85rem;
+  font-weight: 800;
+  color: var(--text-primary);
+  margin-top: 0.25rem;
+}
+
+.algo-badge {
+  font-size: 0.65rem;
+  text-transform: uppercase;
+  font-family: var(--font-mono);
+  font-weight: 700;
+  padding: 0.15rem 0.5rem;
+  border-radius: var(--radius-full);
+  background: var(--bg-surface-secondary);
+  color: var(--text-primary);
+  border: 1px solid var(--border-color);
 }
 
 .query-desc-box {

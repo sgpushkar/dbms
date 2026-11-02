@@ -1,20 +1,23 @@
 {
-  "name": "dbms-lab-portal",
+  "name": "aoa-lab-portal",
   "version": "1.0.0",
-  "description": "DBMS Laboratory Experiments Portal with SQL Queries and Oracle XE Outputs",
+  "description": "Analysis of Algorithms (AOA) Laboratory Experiments Portal with C Programs, Complexities, and Console Outputs",
   "main": "index.html",
   "scripts": {
     "dev": "node dev-server.js",
     "start": "node dev-server.js"
   },
   "keywords": [
-    "dbms",
-    "oracle-database",
-    "sql",
+    "aoa",
+    "daa",
+    "algorithms",
+    "c-programming",
+    "sorting",
+    "dynamic-programming",
+    "greedy",
+    "backtracking",
     "laboratory-journal",
     "static-site"
   ],
-  "author": "Gargi Malvi, Pranali Karande",
   "license": "ISC"
 }
-

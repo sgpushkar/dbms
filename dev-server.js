@@ -152,7 +152,7 @@ function startServer(port) {
   server.listen(port, () => {
     const url = `http://localhost:${port}`;
     console.log(`\n==================================================`);
-    console.log(`🚀 DBMS Lab Portal Dev Server Running!`);
+    console.log(`⚡ AOA Lab Practicals Portal Dev Server Running!`);
     console.log(`--------------------------------------------------`);
     console.log(`> Local:   ${url}`);
     console.log(`> Mode:    Development (Live Reload Active)`);

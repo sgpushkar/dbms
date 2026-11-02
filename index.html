@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>DBMS Laboratory Experiments Portal | Oracle SQL Practicals</title>
-  <meta name="description" content="Comprehensive interactive static portal displaying all Database Management System (DBMS) laboratory experiments, SQL queries, schemas, and Oracle Express Edition execution outputs.">
+  <title>Analysis of Algorithms (AOA) Practicals Portal | C Language Laboratory</title>
+  <meta name="description" content="Academic interactive laboratory portal for Design & Analysis of Algorithms (AOA/DAA) featuring complete C source code, time and space complexities, and Turbo C / GCC terminal execution outputs.">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -19,16 +19,16 @@
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
       </button>
 
-      <div class="brand-logo" title="Oracle Database Laboratory">
-        SQL
+      <div class="brand-logo" title="Analysis of Algorithms Laboratory">
+        AOA
       </div>
 
       <div class="brand-info">
         <h1>
-          DBMS Lab Experiments
-          <span class="rdbms-badge">Oracle 21c XE</span>
+          AOA Lab Practicals
+          <span class="algo-badge">Turbo C / GCC</span>
         </h1>
-        <p>Database Management Systems Practical Portfolio</p>
+        <p>Design & Analysis of Algorithms Practical Portfolio</p>
       </div>
     </div>
 
@@ -37,14 +37,14 @@
       <!-- Search Box with Keyboard Shortcut -->
       <div class="search-box">
         <svg class="search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-        <input type="text" id="global-search" placeholder="Search experiments, queries, keywords (press '/' to focus)..." aria-label="Search Experiments">
+        <input type="text" id="global-search" placeholder="Search algorithms, keywords, complexity (press '/' to focus)..." aria-label="Search Experiments">
         <button class="search-clear" id="search-clear" title="Clear Search">&times;</button>
       </div>
 
-      <!-- SQL Playground Modal Trigger -->
-      <button class="btn-nav-primary" onclick="openSandboxWithQuery('SELECT * FROM Employee;')" title="Open Interactive SQL Sandbox">
+      <!-- Algorithm Simulator Modal Trigger -->
+      <button class="btn-nav-primary" onclick="openSimulatorWithExp('exp-1')" title="Open Interactive Algorithm Simulator">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="5 3 19 12 5 21 5 3"/></svg>
-        <span>SQL Sandbox</span>
+        <span>Algorithm Simulator</span>
       </button>
 
       <!-- Print / Export Button -->
@@ -75,9 +75,15 @@
         <div class="sidebar-heading">Quick Shortcuts</div>
         <ul class="exp-nav-list">
           <li class="exp-nav-item">
-            <a href="javascript:void(0)" onclick="openSandboxWithQuery('SELECT * FROM students NATURAL JOIN courses;')">
+            <a href="javascript:void(0)" onclick="openSimulatorWithExp('exp-7')">
               <span class="exp-badge-pill">⚡</span>
-              <span class="exp-nav-text">Interactive Query Sandbox</span>
+              <span class="exp-nav-text">Interactive Algorithm Simulator</span>
+            </a>
+          </li>
+          <li class="exp-nav-item">
+            <a href="aoa_practicals_manual.pdf" target="_blank" title="View Source Lab Manual PDF">
+              <span class="exp-badge-pill">📄</span>
+              <span class="exp-nav-text">Original Lab PDF Manual</span>
             </a>
           </li>
           <li class="exp-nav-item">
@@ -89,17 +95,17 @@
         </ul>
       </div>
 
-      <!-- Student Attribution Card -->
+      <!-- Lab Information Card -->
       <div class="sidebar-footer-card">
         <div class="student-card-title">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-          Lab Practical Details
+          Academic Context
         </div>
         <div class="student-card-detail">
-          <strong>Contributors:</strong> Gargi M. Malvi (Roll 18/20)<br>
-          Pranali R. Karande (Roll 06)<br>
-          <strong>Division / Batch:</strong> B / B1<br>
-          <strong>Environment:</strong> Oracle XE 21c
+          <strong>Course:</strong> Analysis of Algorithms (AOA)<br>
+          <strong>Department:</strong> Computer Engineering<br>
+          <strong>Language:</strong> ANSI C / Turbo C<br>
+          <strong>Experiments:</strong> 09 Programs Verified
         </div>
       </div>
     </aside>
@@ -109,23 +115,23 @@
       <!-- Hero Banner -->
       <div class="hero-banner">
         <div class="hero-text">
-          <h2>DBMS Laboratory Practical Record</h2>
+          <h2>Analysis of Algorithms Practical Record</h2>
           <p>
-            Complete academic repository of database management experiments featuring Data Definition (DDL), Data Manipulation (DML), Security & Transactions (DCL/TCL), Aggregate & Scalar Functions, Relational Joins, and Nested Subqueries with verifiable Oracle Database execution outputs.
+            Complete academic repository of algorithm design experiments featuring Incremental Sorting, Decrease-and-Conquer Search, Divide-and-Conquer Sorting, Greedy Strategy, Backtracking Constraint Satisfaction, and Dynamic Programming with verified terminal execution outputs.
           </p>
         </div>
 
         <div class="stats-grid">
           <div class="stat-chip">
-            <div class="stat-value">07</div>
+            <div class="stat-value">09</div>
             <div class="stat-label">Experiments</div>
           </div>
           <div class="stat-chip">
-            <div class="stat-value">48+</div>
-            <div class="stat-label">SQL Queries</div>
+            <div class="stat-value">09</div>
+            <div class="stat-label">C Programs</div>
           </div>
           <div class="stat-chip">
-            <div class="stat-value">37+</div>
+            <div class="stat-value">09</div>
             <div class="stat-label">Real Outputs</div>
           </div>
           <div class="stat-chip">
@@ -139,14 +145,12 @@
       <div class="controls-toolbar">
         <!-- Category Filter Chips -->
         <div class="filter-chips">
-          <button class="filter-chip active" data-category="ALL">All Experiments (7)</button>
-          <button class="filter-chip" data-category="DDL">DDL Schema</button>
-          <button class="filter-chip" data-category="DML">DML Data</button>
-          <button class="filter-chip" data-category="DCL & TCL">DCL & TCL</button>
-          <button class="filter-chip" data-category="Aggregation & Sets">Aggregation & Sets</button>
-          <button class="filter-chip" data-category="String Functions">String Functions</button>
-          <button class="filter-chip" data-category="Joins">Joins</button>
-          <button class="filter-chip" data-category="Subqueries">Subqueries</button>
+          <button class="filter-chip active" data-category="ALL">All Experiments (9)</button>
+          <button class="filter-chip" data-category="Sorting & Searching">Sorting & Searching</button>
+          <button class="filter-chip" data-category="Divide & Conquer">Divide & Conquer</button>
+          <button class="filter-chip" data-category="Greedy Method">Greedy Method</button>
+          <button class="filter-chip" data-category="Backtracking">Backtracking</button>
+          <button class="filter-chip" data-category="Dynamic Programming">Dynamic Programming</button>
         </div>
 
         <!-- View Controls (Split, Stacked, Code Only, Output Only) -->
@@ -184,8 +188,8 @@
   <footer class="site-footer">
     <div class="footer-inner">
       <div class="footer-authors">
-        <div style="font-weight: 700; color: var(--text-primary);">Database Management Systems Laboratory Portal</div>
-        <div>Curated from verified laboratory manuals & Oracle XE execution sessions.</div>
+        <div style="font-weight: 700; color: var(--text-primary);">Analysis of Algorithms (AOA) Laboratory Practicals Portal</div>
+        <div>Curated from verified laboratory manuals & Turbo C / GCC compilation sessions.</div>
       </div>
 
       <div class="footer-actions">
@@ -241,15 +245,15 @@
     </div>
   </div>
 
-  <!-- ================= Interactive SQL Sandbox Modal ================= -->
-  <div class="modal-backdrop" id="sandbox-modal-backdrop" onclick="if(event.target===this) closeSandbox()">
-    <div class="sandbox-modal">
+  <!-- ================= Interactive Algorithm Simulator Modal ================= -->
+  <div class="modal-backdrop" id="simulator-modal-backdrop" onclick="if(event.target===this) closeSimulator()">
+    <div class="sandbox-modal" style="max-width: 820px;">
       <div class="sandbox-header">
         <h3>
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="5 3 19 12 5 21 5 3"/></svg>
-          Interactive SQL Playground & Simulator
+          Interactive Algorithm Simulator & Visualizer
         </h3>
-        <button class="btn-lightbox" onclick="closeSandbox()" style="color: var(--text-primary); background: var(--bg-surface-secondary); border-color: var(--border-color);" title="Close Sandbox">
+        <button class="btn-lightbox" onclick="closeSimulator()" style="color: var(--text-primary); background: var(--bg-surface-secondary); border-color: var(--border-color);" title="Close Simulator">
           &times;
         </button>
       </div>
@@ -257,49 +261,59 @@
       <div class="sandbox-body">
         <div>
           <div style="font-size: 0.75rem; font-weight: 700; color: var(--text-muted); margin-bottom: 0.4rem; text-transform: uppercase;">
-            Quick Pre-loaded Queries:
+            Select Algorithm to Simulate:
           </div>
           <div class="sandbox-presets">
-            <button class="sandbox-preset-chip" onclick="document.getElementById('sandbox-sql-input').value='SELECT * FROM Employee;'; executeSandboxQuery();">
-              SELECT * FROM Employee
+            <button class="sandbox-preset-chip" data-exp="exp-1" onclick="selectSimulatorAlgorithm('exp-1')">
+              01. Insertion Sort
             </button>
-            <button class="sandbox-preset-chip" onclick="document.getElementById('sandbox-sql-input').value='SELECT * FROM Employee WHERE SALARY > 28000;'; executeSandboxQuery();">
-              Employee WHERE SALARY > 28000
+            <button class="sandbox-preset-chip" data-exp="exp-2" onclick="selectSimulatorAlgorithm('exp-2')">
+              02. Binary Search
             </button>
-            <button class="sandbox-preset-chip" onclick="document.getElementById('sandbox-sql-input').value='SELECT * FROM student2;'; executeSandboxQuery();">
-              SELECT * FROM student2
+            <button class="sandbox-preset-chip" data-exp="exp-3" onclick="selectSimulatorAlgorithm('exp-3')">
+              03. Merge Sort
             </button>
-            <button class="sandbox-preset-chip" onclick="document.getElementById('sandbox-sql-input').value='SELECT * FROM DEPARTMENT;'; executeSandboxQuery();">
-              SELECT * FROM DEPARTMENT
+            <button class="sandbox-preset-chip" data-exp="exp-4" onclick="selectSimulatorAlgorithm('exp-4')">
+              04. Quick Sort
             </button>
-            <button class="sandbox-preset-chip" onclick="document.getElementById('sandbox-sql-input').value='SELECT * FROM students;'; executeSandboxQuery();">
-              SELECT * FROM students
+            <button class="sandbox-preset-chip" data-exp="exp-5" onclick="selectSimulatorAlgorithm('exp-5')">
+              05. Fractional Knapsack
             </button>
-            <button class="sandbox-preset-chip" onclick="document.getElementById('sandbox-sql-input').value='SELECT * FROM courses;'; executeSandboxQuery();">
-              SELECT * FROM courses
+            <button class="sandbox-preset-chip" data-exp="exp-6" onclick="selectSimulatorAlgorithm('exp-6')">
+              06. Kruskal's MST
+            </button>
+            <button class="sandbox-preset-chip" data-exp="exp-7" onclick="selectSimulatorAlgorithm('exp-7')">
+              07. 4-Queen Problem
+            </button>
+            <button class="sandbox-preset-chip" data-exp="exp-8" onclick="selectSimulatorAlgorithm('exp-8')">
+              08. Graph m-Coloring
+            </button>
+            <button class="sandbox-preset-chip" data-exp="exp-9" onclick="selectSimulatorAlgorithm('exp-9')">
+              09. LCS (Dynamic Prog)
             </button>
           </div>
         </div>
 
-        <div class="sandbox-editor-wrapper">
-          <textarea class="sandbox-textarea" id="sandbox-sql-input" placeholder="Type SQL query here (e.g. SELECT * FROM Employee WHERE DEPARTMENT = 'IT';)...">SELECT * FROM Employee;</textarea>
+        <!-- Dynamic Inputs Container for Selected Algorithm -->
+        <div id="simulator-inputs" style="background: var(--bg-surface-secondary); padding: 1rem; border-radius: var(--radius-sm); border: 1px solid var(--border-color);">
+          <!-- Injected via JavaScript -->
         </div>
 
         <div class="sandbox-toolbar">
           <span style="font-size: 0.75rem; color: var(--text-muted);">
-            Simulating against local in-memory tables: STUDENT27, student2, Employee, courses, students, DEPARTMENT, EMPLOYEE.
+            In-browser JavaScript engine simulating the identical C algorithm logic & state transitions.
           </span>
-          <button class="btn-run-sql" onclick="executeSandboxQuery()">
+          <button class="btn-run-sql" onclick="executeSimulatorAlgorithm()">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="5 3 19 12 5 21 5 3"/></svg>
-            Execute SQL
+            Run Algorithm
           </button>
         </div>
 
         <div>
           <div style="font-size: 0.75rem; font-weight: 700; color: var(--text-muted); margin-bottom: 0.4rem; text-transform: uppercase;">
-            Query Execution Output:
+            Simulated C Runtime Console Output:
           </div>
-          <div class="sandbox-result-area" id="sandbox-result-area">
+          <div class="sandbox-result-area" id="simulator-result-area">
             <!-- Output rendered dynamically -->
           </div>
         </div>
@@ -312,4 +326,3 @@
   <script src="assets/js/app.js"></script>
 </body>
 </html>
-
