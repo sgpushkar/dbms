@@ -68,7 +68,7 @@ function buildSidebarNav() {
       <a href="#${exp.id}" onclick="smoothScrollTo('${exp.id}', event)">
         <span class="exp-badge-pill">${exp.number}</span>
         <span class="exp-nav-text">${escapeHtml(exp.title)}</span>
-        <button class="sidebar-quick-copy" onclick="copyExpCodeById('${exp.id}', event)" title="Quick Copy C Code (1-Click)" aria-label="Copy code for ${escapeHtml(exp.title)}">
+        <button class="sidebar-quick-copy" onclick="copyExpCodeById('${exp.id}', event, this)" title="Quick Copy C Code (1-Click)" aria-label="Copy code for ${escapeHtml(exp.title)}">
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
         </button>
       </a>
@@ -260,9 +260,7 @@ function renderExperimentSection(exp, searchQuery) {
 // Render Single Program Card (with Sticky Copy Bar & Line Numbers)
 function renderProgramCard(item, exp, searchQuery) {
   const rawCode = item.code || '';
-  const escapedCode = escapeJsString(rawCode);
   const lineCount = rawCode.trim().split('\n').length;
-  const programTitle = exp.title;
 
   return `
     <div class="query-card" id="${item.id}">
@@ -273,7 +271,7 @@ function renderProgramCard(item, exp, searchQuery) {
           <span class="query-type-badge">${item.type}</span>
         </div>
         <div class="query-actions">
-          <button class="btn-query-action btn-copy" onclick="copyCodeToClipboard(this, \`${escapedCode}\`, '${escapeJsString(programTitle)}')" aria-label="Copy C Source Code">
+          <button class="btn-query-action btn-copy" onclick="copyCodeByItemId('${item.id}', this)" aria-label="Copy C Source Code" title="Copy full C program (1-Click)">
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
             <span>Copy C Code</span>
           </button>
@@ -304,7 +302,7 @@ function renderProgramCard(item, exp, searchQuery) {
               <span class="code-line-badge">${lineCount} lines</span>
             </div>
             <div class="code-toolbar-actions">
-              <button class="btn-sticky-copy" onclick="copyCodeToClipboard(this, \`${escapedCode}\`, '${escapeJsString(programTitle)}')" aria-label="Quick Copy C Code" title="Copy full C program (1-Click)">
+              <button class="btn-sticky-copy" onclick="copyCodeByItemId('${item.id}', this)" aria-label="Quick Copy C Code" title="Copy full C program (1-Click)">
                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
                 <span>Copy Code</span>
               </button>
@@ -364,7 +362,7 @@ function renderProgramCard(item, exp, searchQuery) {
                 <div class="terminal-header">
                   <span>Turbo C++ / GCC Terminal Console</span>
                   <div style="display: flex; gap: 0.5rem; align-items: center;">
-                    <button class="btn-terminal-copy" onclick="copyCodeToClipboard(this, \`${escapeJsString(item.terminalOutput || '')}\`, 'Console Output')" title="Copy terminal output text">
+                    <button class="btn-terminal-copy" onclick="copyTerminalByItemId('${item.id}', this)" title="Copy terminal output text">
                       <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
                       <span>Copy Output</span>
                     </button>
@@ -426,39 +424,108 @@ function showToast(message) {
   }, 2500);
 }
 
-// Copy Code to Clipboard with Instant Visual & Toast Feedback
-function copyCodeToClipboard(btn, text, title) {
-  navigator.clipboard.writeText(text).then(() => {
-    const span = btn ? btn.querySelector('span') : null;
+// Unified, Robust Clipboard Engine (with Automatic Fallback for file:// and older browsers)
+function copyTextToClipboard(text, btn, title) {
+  if (!text) {
+    showToast('⚠️ No content available to copy.');
+    return;
+  }
+
+  // Method 1: Try modern Async Clipboard API
+  if (navigator.clipboard && window.isSecureContext) {
+    navigator.clipboard.writeText(text).then(() => {
+      onCopySuccess(btn, title);
+    }).catch(err => {
+      console.warn('Async Clipboard API failed, attempting execCommand fallback...', err);
+      fallbackCopyText(text, btn, title);
+    });
+  } else {
+    // Method 2: Fallback for file:// or restricted environments
+    fallbackCopyText(text, btn, title);
+  }
+}
+
+// ExecCommand Fallback Engine using Temporary Off-screen Textarea
+function fallbackCopyText(text, btn, title) {
+  try {
+    const textArea = document.createElement('textarea');
+    textArea.value = text;
+    textArea.setAttribute('readonly', '');
+    textArea.style.position = 'fixed';
+    textArea.style.top = '0';
+    textArea.style.left = '-9999px';
+    textArea.style.opacity = '0';
+    document.body.appendChild(textArea);
+    textArea.focus();
+    textArea.select();
+    textArea.setSelectionRange(0, 99999);
+
+    const successful = document.execCommand('copy');
+    document.body.removeChild(textArea);
+
+    if (successful) {
+      onCopySuccess(btn, title);
+    } else {
+      showToast('⚠️ Copy failed. Please select code manually and press Ctrl+C.');
+    }
+  } catch (err) {
+    console.error('ExecCommand copy failed:', err);
+    showToast('⚠️ Copy failed. Please select code manually.');
+  }
+}
+
+// Visual & Haptic Success Handler
+function onCopySuccess(btn, title) {
+  if (btn) {
+    const span = btn.querySelector('span');
     const originalText = span ? span.textContent : '';
-    if (btn) {
-      btn.classList.add('copied');
-      if (span) span.textContent = 'Copied!';
+    btn.classList.add('copied');
+    if (span) span.textContent = 'Copied!';
+
+    setTimeout(() => {
+      btn.classList.remove('copied');
+      if (span) span.textContent = originalText;
+    }, 2000);
+  }
+  showToast(`✓ ${title || 'Code'} copied to clipboard!`);
+}
+
+// Copy Code by Program Item ID
+function copyCodeByItemId(itemId, btn) {
+  for (const exp of EXPERIMENTS_DATA) {
+    if (exp.items) {
+      const item = exp.items.find(it => it.id === itemId);
+      if (item && item.code) {
+        copyTextToClipboard(item.code, btn, `${exp.title} Source Code`);
+        return;
+      }
     }
-    showToast(`✓ ${title || 'Code'} copied to clipboard!`);
-    
-    if (btn) {
-      setTimeout(() => {
-        btn.classList.remove('copied');
-        if (span) span.textContent = originalText;
-      }, 2000);
+  }
+}
+
+// Copy Terminal Output by Program Item ID
+function copyTerminalByItemId(itemId, btn) {
+  for (const exp of EXPERIMENTS_DATA) {
+    if (exp.items) {
+      const item = exp.items.find(it => it.id === itemId);
+      if (item && item.terminalOutput) {
+        copyTextToClipboard(item.terminalOutput, btn, `${exp.title} Terminal Output`);
+        return;
+      }
     }
-  }).catch(err => {
-    console.error('Failed to copy code:', err);
-    showToast('Failed to copy. Please allow clipboard permissions.');
-  });
+  }
 }
 
 // Quick Copy direct from Sidebar TOC
-function copyExpCodeById(expId, event) {
+function copyExpCodeById(expId, event, btn) {
   if (event) {
     event.stopPropagation();
     event.preventDefault();
   }
   const exp = EXPERIMENTS_DATA.find(e => e.id === expId);
   if (!exp || !exp.items || exp.items.length === 0) return;
-  const targetBtn = event ? event.currentTarget : null;
-  copyCodeToClipboard(targetBtn, exp.items[0].code, exp.title);
+  const targetBtn = btn || (event ? event.currentTarget : null);
+  copyTextToClipboard(exp.items[0].code, targetBtn, exp.title);
 }
 
 // Helper to escape raw string into JS attribute string
