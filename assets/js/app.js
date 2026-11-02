@@ -58,7 +58,7 @@ function applyLayoutView(view) {
   });
 }
 
-// Build Sidebar Table of Contents
+// Build Sidebar Table of Contents with Direct 1-Click Copy Action
 function buildSidebarNav() {
   const navContainer = document.getElementById('sidebar-nav-list');
   if (!navContainer) return;
@@ -68,38 +68,54 @@ function buildSidebarNav() {
       <a href="#${exp.id}" onclick="smoothScrollTo('${exp.id}', event)">
         <span class="exp-badge-pill">${exp.number}</span>
         <span class="exp-nav-text">${escapeHtml(exp.title)}</span>
-        <span class="exp-nav-count">${exp.items ? exp.items.length : 1}</span>
+        <button class="sidebar-quick-copy" onclick="copyExpCodeById('${exp.id}', event)" title="Quick Copy C Code (1-Click)" aria-label="Copy code for ${escapeHtml(exp.title)}">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+        </button>
       </a>
     </li>
   `).join('');
 }
 
-// Syntax Highlighting for C Code
+// High-Contrast Syntax Highlighting for C Code
 function highlightCCode(code) {
   let formatted = escapeHtml(code);
 
   // Preprocessor directives (#include, #define)
   formatted = formatted.replace(/(#(?:include|define|ifdef|ifndef|endif)[^\n\r]*)/g, '<span class="c-preprocessor">$1</span>');
 
+  // String literals
+  formatted = formatted.replace(/(&quot;[\s\S]*?&quot;)/g, '<span class="c-string">$1</span>');
+
   // Multi-line and single-line comments
   formatted = formatted.replace(/(\/\*[\s\S]*?\*\/)/g, '<span class="c-comment">$1</span>');
   formatted = formatted.replace(/(\/\/.*$)/gm, '<span class="c-comment">$1</span>');
 
-  // String literals
-  formatted = formatted.replace(/(&quot;[\s\S]*?&quot;)/g, '<span class="c-string">$1</span>');
+  // C Data Types
+  const types = /\b(void|int|char|float|double|struct|typedef|size_t)\b/g;
+  formatted = formatted.replace(types, '<span class="c-type">$1</span>');
 
-  // Keywords
-  const keywords = /\b(void|int|char|float|double|struct|typedef|for|while|if|else|return|break|continue|switch|case|default|static|const|sizeof)\b/g;
+  // Control Flow Keywords
+  const keywords = /\b(for|while|if|else|return|break|continue|switch|case|default|static|const|sizeof)\b/g;
   formatted = formatted.replace(keywords, '<span class="c-keyword">$1</span>');
 
-  // Standard Library & Common Functions
-  const functions = /\b(printf|scanf|clrscr|getch|abs|strlen|quicksort|mergeSort|merge|nqueen|place|display|find|uni|graphColoring|isSafe)\b/g;
+  // Standard Library & Core Functions
+  const functions = /\b(printf|scanf|clrscr|getch|abs|strlen|quicksort|mergeSort|merge|nqueen|place|display|find|uni|graphColoring|isSafe|main)\b/g;
   formatted = formatted.replace(functions, '<span class="c-function">$1</span>');
 
   // Numbers
   formatted = formatted.replace(/\b(\d+)\b/g, '<span class="c-number">$1</span>');
 
   return formatted;
+}
+
+// Render Code with Line Numbers for IDE-like Readability
+function renderCodeWithLineNumbers(rawCode) {
+  const lines = rawCode.trim().split('\n');
+  return lines.map((line, idx) => {
+    const lineNum = idx + 1;
+    const highlighted = highlightCCode(line);
+    return `<div class="code-line"><span class="line-number">${lineNum}</span><span class="line-content">${highlighted || '&nbsp;'}</span></div>`;
+  }).join('');
 }
 
 // Render All Experiments
@@ -172,21 +188,21 @@ function renderExperimentSection(exp, searchQuery) {
           </div>
           <div class="aim-desc">${highlightSearchTerm(exp.aim, searchQuery)}</div>
 
-          <!-- Time & Space Complexity Cards Grid -->
+          <!-- Time & Space Complexity Cards Grid (Color Coded & Accessible) -->
           <div class="complexity-grid">
-            <div class="complexity-card">
+            <div class="complexity-card card-best">
               <span class="complexity-label">Best Case Time</span>
               <span class="complexity-value">${exp.complexities.bestTime}</span>
             </div>
-            <div class="complexity-card">
+            <div class="complexity-card card-avg">
               <span class="complexity-label">Average Case Time</span>
               <span class="complexity-value">${exp.complexities.avgTime}</span>
             </div>
-            <div class="complexity-card">
+            <div class="complexity-card card-worst">
               <span class="complexity-label">Worst Case Time</span>
               <span class="complexity-value">${exp.complexities.worstTime}</span>
             </div>
-            <div class="complexity-card">
+            <div class="complexity-card card-space">
               <span class="complexity-label">Space Complexity</span>
               <span class="complexity-value">${exp.complexities.space}</span>
             </div>
@@ -241,10 +257,12 @@ function renderExperimentSection(exp, searchQuery) {
   `;
 }
 
-// Render Single Program Card
+// Render Single Program Card (with Sticky Copy Bar & Line Numbers)
 function renderProgramCard(item, exp, searchQuery) {
   const rawCode = item.code || '';
-  const escapedCode = escapeHtml(rawCode);
+  const escapedCode = escapeJsString(rawCode);
+  const lineCount = rawCode.trim().split('\n').length;
+  const programTitle = exp.title;
 
   return `
     <div class="query-card" id="${item.id}">
@@ -255,8 +273,8 @@ function renderProgramCard(item, exp, searchQuery) {
           <span class="query-type-badge">${item.type}</span>
         </div>
         <div class="query-actions">
-          <button class="btn-query-action btn-copy" onclick="copyCodeToClipboard(this, \`${escapeJsString(rawCode)}\`)">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+          <button class="btn-query-action btn-copy" onclick="copyCodeToClipboard(this, \`${escapedCode}\`, '${escapeJsString(programTitle)}')" aria-label="Copy C Source Code">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
             <span>Copy C Code</span>
           </button>
           <button class="btn-query-action" onclick="openSimulatorWithExp('${exp.id}')">
@@ -268,7 +286,7 @@ function renderProgramCard(item, exp, searchQuery) {
 
       <!-- Split Layout: Code on Left, Real Screenshot / Terminal on Right -->
       <div class="query-content-grid">
-        <!-- Left: C Code Pane -->
+        <!-- Left: C Code Pane with Sticky Header -->
         <div class="query-code-pane">
           <div class="code-header-bar">
             <div class="code-dots">
@@ -278,7 +296,28 @@ function renderProgramCard(item, exp, searchQuery) {
             </div>
             <span>${exp.title} • C Source Code (ANSI C)</span>
           </div>
-          <pre class="query-code-pre"><code>${highlightCCode(rawCode)}</code></pre>
+
+          <!-- Sticky Code Toolbar: Always Visible While Scrolling! -->
+          <div class="code-sticky-toolbar">
+            <div class="code-lang-info">
+              <span>C99 / Turbo C</span>
+              <span class="code-line-badge">${lineCount} lines</span>
+            </div>
+            <div class="code-toolbar-actions">
+              <button class="btn-sticky-copy" onclick="copyCodeToClipboard(this, \`${escapedCode}\`, '${escapeJsString(programTitle)}')" aria-label="Quick Copy C Code" title="Copy full C program (1-Click)">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span>Copy Code</span>
+              </button>
+              <button class="btn-sticky-run" onclick="openSimulatorWithExp('${exp.id}')" title="Test in interactive simulator">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+                <span>Run</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Line-numbered C Code Pre -->
+          <pre class="query-code-pre"><code>${renderCodeWithLineNumbers(rawCode)}</code></pre>
+
           <div class="query-desc-box">
             ${highlightSearchTerm(item.description, searchQuery)}
           </div>
@@ -288,23 +327,33 @@ function renderProgramCard(item, exp, searchQuery) {
         <div class="query-output-pane">
           <div class="output-header-bar">
             <div class="output-tabs">
-              <button class="output-tab-btn active" onclick="switchOutputTab(this, 'screenshot')">Actual Screenshot</button>
-              <button class="output-tab-btn" onclick="switchOutputTab(this, 'terminal')">Console View</button>
+              <button class="output-tab-btn active" onclick="switchOutputTab(this, 'screenshot')">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+                Actual Screenshot
+              </button>
+              <button class="output-tab-btn" onclick="switchOutputTab(this, 'terminal')">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/></svg>
+                Console View
+              </button>
             </div>
             <span class="output-status-pill">${escapeHtml(item.status || 'Execution verified')}</span>
           </div>
 
           <div class="output-body">
-            <!-- Screenshot View -->
+            <!-- Screenshot View (Enlarged & Sharp) -->
             <div class="tab-pane-screenshot active">
               <div class="screenshot-container" onclick="openLightboxImage('${item.image}', '${escapeHtml(item.title)} - ${escapeHtml(item.imageCaption)}')">
-                <img src="${item.image}" alt="${item.title}" class="screenshot-img" loading="lazy">
                 <div class="screenshot-overlay">
                   <span>${escapeHtml(item.imageCaption)}</span>
                   <span class="zoom-hint">
                     <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="11" y1="8" x2="11" y2="14"/><line x1="8" y1="11" x2="14" y2="11"/></svg>
-                    Full View
+                    Full Resolution
                   </span>
+                </div>
+                <img src="${item.image}" alt="${item.title}" class="screenshot-img" loading="lazy">
+                <div class="screenshot-zoom-banner">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="11" y1="8" x2="11" y2="14"/><line x1="8" y1="11" x2="14" y2="11"/></svg>
+                  <span>Click screenshot to inspect fullscreen (zoom & pan)</span>
                 </div>
               </div>
             </div>
@@ -314,7 +363,13 @@ function renderProgramCard(item, exp, searchQuery) {
               <div class="terminal-console-box">
                 <div class="terminal-header">
                   <span>Turbo C++ / GCC Terminal Console</span>
-                  <span class="terminal-tag">Execution Log</span>
+                  <div style="display: flex; gap: 0.5rem; align-items: center;">
+                    <button class="btn-terminal-copy" onclick="copyCodeToClipboard(this, \`${escapeJsString(item.terminalOutput || '')}\`, 'Console Output')" title="Copy terminal output text">
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                      <span>Copy Output</span>
+                    </button>
+                    <span class="terminal-tag">Execution Log</span>
+                  </div>
                 </div>
                 <div class="terminal-content">${renderFormattedTerminal(item.terminalOutput)}</div>
               </div>
@@ -351,21 +406,59 @@ function switchOutputTab(btn, tabType) {
   }
 }
 
-// Copy Code to Clipboard
-function copyCodeToClipboard(btn, text) {
+// Global Floating Toast Notification
+function showToast(message) {
+  let toast = document.getElementById('global-toast');
+  if (!toast) {
+    toast = document.createElement('div');
+    toast.id = 'global-toast';
+    toast.className = 'global-toast';
+    document.body.appendChild(toast);
+  }
+  toast.innerHTML = `
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+    <span>${message}</span>
+  `;
+  toast.classList.add('active');
+  clearTimeout(window.__toastTimeout);
+  window.__toastTimeout = setTimeout(() => {
+    toast.classList.remove('active');
+  }, 2500);
+}
+
+// Copy Code to Clipboard with Instant Visual & Toast Feedback
+function copyCodeToClipboard(btn, text, title) {
   navigator.clipboard.writeText(text).then(() => {
-    const span = btn.querySelector('span');
-    const originalText = span.textContent;
-    btn.classList.add('copied');
-    span.textContent = 'Copied!';
+    const span = btn ? btn.querySelector('span') : null;
+    const originalText = span ? span.textContent : '';
+    if (btn) {
+      btn.classList.add('copied');
+      if (span) span.textContent = 'Copied!';
+    }
+    showToast(`✓ ${title || 'Code'} copied to clipboard!`);
     
-    setTimeout(() => {
-      btn.classList.remove('copied');
-      span.textContent = originalText;
-    }, 2000);
+    if (btn) {
+      setTimeout(() => {
+        btn.classList.remove('copied');
+        if (span) span.textContent = originalText;
+      }, 2000);
+    }
   }).catch(err => {
     console.error('Failed to copy code:', err);
+    showToast('Failed to copy. Please allow clipboard permissions.');
   });
+}
+
+// Quick Copy direct from Sidebar TOC
+function copyExpCodeById(expId, event) {
+  if (event) {
+    event.stopPropagation();
+    event.preventDefault();
+  }
+  const exp = EXPERIMENTS_DATA.find(e => e.id === expId);
+  if (!exp || !exp.items || exp.items.length === 0) return;
+  const targetBtn = event ? event.currentTarget : null;
+  copyCodeToClipboard(targetBtn, exp.items[0].code, exp.title);
 }
 
 // Helper to escape raw string into JS attribute string
