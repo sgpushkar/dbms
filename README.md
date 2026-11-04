@@ -1,6 +1,6 @@
 # ☕ Java Programming & Web Technologies Practicals Portal
 
-A modern, responsive, high-contrast client-side web application showcasing complete laboratory experiments for **Full Stack Java Programming (FSJP) & Web Technologies** (Final OR/PR Exam). The portal features syntax-highlighted Java (JDK 21+) and JavaScript (ES6+) source codes, runtime complexity profiles, theoretical background, learning outcomes, verified execution screenshots, and an interactive in-browser playground with live embedded web applications (Stopwatch, Email Validator, DOM Color Changer).
+A modern, responsive, high-contrast client-side web application showcasing complete laboratory experiments for **Full Stack Java Programming (FSJP) & Web Technologies** (Final OR/PR Exam). The portal features syntax-highlighted Java (JDK 21+) and JavaScript (ES6+) source codes, runtime complexity profiles, theoretical background, learning outcomes, authentic execution screenshots directly sourced from laboratory write-ups, and an interactive in-browser playground with live embedded web applications (Stopwatch, Email Validator, DOM Color Changer).
 
 ---
 
@@ -21,14 +21,14 @@ The local server will launch at [http://localhost:3000](http://localhost:3000) w
 
 ## 📚 Complete Experiments Curriculum (Final OR/PR Exam)
 
-| Exp | Title | Category / Stack | Core Architectural Concept | Verified Output |
-|:---:|---|---|---|---|
-| **01** | **Classes & Objects** | Core Java (OOP) | Blueprint, state encapsulation, heap allocation via `new`, member methods | Terminal execution of `StudentDemo` with grades & percentage |
-| **02** | **Method & Constructor Overloading** | Core Java (OOP) | Compile-time polymorphism, constructor chaining, shape calculations | Terminal execution of `OverloadDemo` (Cube/Prism, Circle/Rect) |
-| **03** | **Inheritance & Exception Handling** | Core Java (OOP) | Multi-level hierarchy (`Employee` → `Manager`), `ArithmeticException`, custom `InvalidAgeException` | Terminal execution of `InheritanceExceptionDemo` with try-catch-finally |
-| **04** | **Interactive Website using JavaScript** | Web Technologies | DOM event handling, millisecond timers (`setInterval`), state tracking | Authentic Stopwatch web application with live digital timer |
-| **05** | **Email Validation Script** | Web Technologies | Presence check of `@` and `.`, form validation, modal alert popups | Browser alert validation error modal & focus return |
-| **06** | **DOM 5-Second Background Color Changer** | Web Technologies | Document Object Model (`style.backgroundColor`), timed cyclic transitions | Live 5-second automatic color cycle controller |
+| Exp | Title | Category / Stack | Reference Documents | Core Architectural Concept | Verified Output |
+|:---:|---|---|---|---|---|
+| **01** | **Classes & Objects** | Core Java (OOP) | `g1.docx` & `OOPS Java Concepts.pdf` | Blueprint, state encapsulation, heap allocation via `new`, member methods | Terminal execution of `Student` & `Main` with authentic output |
+| **02** | **Method & Constructor Overloading** | Core Java (OOP) | `java 2.pdf` & `OOPS Java Concepts.pdf` | Compile-time polymorphism, 3 constructor overloads (`Student`), 3 method overloads (`B.area()`) | Terminal execution of `Class2` with static & CLI parameter outputs |
+| **03** | **Inheritance & Exception Handling** | Core Java (OOP) | `Java 3.pdf` & `OOPS Java Concepts.pdf` | Single (`B extends A`), Multilevel (`C extends B`), Multiple via Interfaces (`D implements D1, D2`), `try-catch-finally` | Terminal execution of `Class3` with constructor chain & exception traps |
+| **04** | **Interactive Website using JavaScript** | Web Technologies | `exp7java.docx` & `java8.pdf` / `Exp10JAVA.docx` | Responsive static website layout (`showMessage()`) + Dynamic Stopwatch web app (`setInterval`) | Authentic website output + Live interactive digital stopwatch in card |
+| **05** | **Email Validation Script** | Web Technologies | Syllabus Specification | Presence check of `@` and `.`, form validation, modal alert popups, focus control | Browser alert validation error modal & focus reset |
+| **06** | **DOM 5-Second Background Color Changer** | Web Technologies | `java9.pdf` | Document Object Model (`style.backgroundColor`), timed cyclic transitions, optional Servlet backend | Live 5-second automatic color cycle controller + Tomcat servlet support |
 
 ---
 
@@ -36,7 +36,7 @@ The local server will launch at [http://localhost:3000](http://localhost:3000) w
 
 - **Split & Stacked Views:** Toggle between side-by-side view (Code on left, execution output on right) or stacked view, code-only, or output-only.
 - **Triple Output Display:**
-  - **Actual Screenshot:** High-resolution screenshots of terminal compilation sessions and browser outputs.
+  - **Actual Screenshot:** High-resolution authentic screenshots of terminal compilation sessions and browser outputs.
   - **Console View:** Crisp, monospace terminal execution logs with exit codes and execution summaries.
   - **Live Interactive App:** Direct client-side embedded widgets for Experiments 4, 5, and 6:
     - *Exp 4:* Working millisecond-precision digital stopwatch with Start, Stop, and Reset.
@@ -54,7 +54,9 @@ The local server will launch at [http://localhost:3000](http://localhost:3000) w
 ## 👥 Academic Record Context
 
 - **Student Name:** Pushkar Ravindra Mhatre
-- **Roll Number:** 64 | **Division:** B | **Batch:** B-1 / B-3
+- **Roll Number:** 64 | **Division:** B | **Batch:** B-1
+- **Admission Number:** 2026HE0153
+- **College Email:** pushkarm25hcompe@student.mes.ac.in
 - **Course:** Full Stack Java Programming (FSJP) & Web Technologies Lab
 - **Department:** Computer Engineering
 - **Institution:** Mahatma Education Society (Pillai / MES)

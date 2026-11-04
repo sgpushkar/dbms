@@ -1124,16 +1124,16 @@ function selectSimulatorAlgorithm(expId) {
     html += `
       <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 0.75rem;">
         <div style="display: flex; flex-direction: column; gap: 0.4rem;">
-          <label style="font-size: 0.75rem; font-weight: 600; color: var(--text-secondary);">Cube Side (Box Constructor 1):</label>
-          <input type="number" id="sim-box-side" class="sandbox-textarea" style="height: 40px; padding: 0.5rem 0.75rem;" value="${config.boxSide}">
+          <label style="font-size: 0.75rem; font-weight: 600; color: var(--text-secondary);">Circle Radius (r):</label>
+          <input type="number" id="sim-circle-radius" class="sandbox-textarea" style="height: 40px; padding: 0.5rem 0.75rem;" value="10">
         </div>
         <div style="display: flex; flex-direction: column; gap: 0.4rem;">
-          <label style="font-size: 0.75rem; font-weight: 600; color: var(--text-secondary);">Prism (W, H, D - Box Constr 2):</label>
-          <input type="text" id="sim-box-dims" class="sandbox-textarea" style="height: 40px; padding: 0.5rem 0.75rem;" value="${config.boxDims}">
+          <label style="font-size: 0.75rem; font-weight: 600; color: var(--text-secondary);">Rectangle Length (l):</label>
+          <input type="number" id="sim-rect-l" class="sandbox-textarea" style="height: 40px; padding: 0.5rem 0.75rem;" value="10">
         </div>
         <div style="display: flex; flex-direction: column; gap: 0.4rem;">
-          <label style="font-size: 0.75rem; font-weight: 600; color: var(--text-secondary);">Circle Radius (Method Overload):</label>
-          <input type="number" id="sim-circle-radius" class="sandbox-textarea" style="height: 40px; padding: 0.5rem 0.75rem;" value="${config.radius}">
+          <label style="font-size: 0.75rem; font-weight: 600; color: var(--text-secondary);">Rectangle Breadth (b):</label>
+          <input type="number" id="sim-rect-b" class="sandbox-textarea" style="height: 40px; padding: 0.5rem 0.75rem;" value="20">
         </div>
       </div>
     `;
@@ -1264,36 +1264,34 @@ function executeSimulatorAlgorithm() {
       }
 
       case 'exp-2': {
-        const side = Number(document.getElementById('sim-box-side')?.value || 5.0);
-        const dimsStr = document.getElementById('sim-box-dims')?.value || '4, 6, 8';
-        const dims = dimsStr.split(/[\s,]+/).filter(x => x.length > 0).map(Number);
-        const w = dims[0] || 4.0, h = dims[1] || 6.0, d = dims[2] || 8.0;
-        const radius = Number(document.getElementById('sim-circle-radius')?.value || 7.0);
+        const radius = Number(document.getElementById('sim-circle-radius')?.value || 10);
+        const rectL = Number(document.getElementById('sim-rect-l')?.value || 10);
+        const rectB = Number(document.getElementById('sim-rect-b')?.value || 20);
 
-        const volCube = side * side * side;
-        const volPrism = w * h * d;
-        const circleArea = Math.PI * radius * radius;
-        const rectArea = 10.0 * 5.0;
-        const triArea = 0.5 * 8.0 * 6.0;
+        const circleArea = 3.14 * radius * radius;
+        const rectArea = rectL * rectB;
 
         log += `==================================================\n`;
-        log += `   DEMONSTRATION OF CONSTRUCTOR & METHOD OVERLOADING \n`;
+        log += `  METHOD & CONSTRUCTOR OVERLOADING (java 2.pdf)   \n`;
         log += `==================================================\n\n`;
-        log += `[Part 1: Constructor Overloading in Class Box]\n`;
-        log += `--------------------------------------------------\n`;
-        log += `Invoking Box(): Default dimensions initialized.\n`;
-        log += `Volume of Default Box  : 0.000 cubic units\n`;
-        log += `Invoking Box(double side = ${side.toFixed(1)}): Cube constructor called.\n`;
-        log += `Volume of Cube         : ${volCube.toFixed(3)} cubic units\n`;
-        log += `Invoking Box(w=${w.toFixed(1)}, h=${h.toFixed(1)}, d=${d.toFixed(1)}): Rectangular prism constructor called.\n`;
-        log += `Volume of Prism        : ${volPrism.toFixed(3)} cubic units\n\n`;
-        log += `[Part 2: Method Overloading in Class ShapeCalculator]\n`;
-        log += `--------------------------------------------------\n`;
-        log += `area(double radius = ${radius.toFixed(1)})     -> Circle Area    : ${circleArea.toFixed(4)} sq. units\n`;
-        log += `area(double l = 10.0, double b = 5.0) -> Rectangle Area : ${rectArea.toFixed(2)} sq. units\n`;
-        log += `area(float b = 8.0f, float h = 6.0f)   -> Triangle Area  : ${triArea.toFixed(2)} sq. units\n`;
-        log += `--------------------------------------------------\n`;
-        log += `Compile-Time (Static) Polymorphism successfully resolved by JVM method signature matching.`;
+        log += `[Part 1: Constructor Overloading in Class Student]\n`;
+        log += `Invoking Student():\n`;
+        log += `Default Constructor invoked\n`;
+        log += `Default values: Name = null, Roll No = 0\n\n`;
+        log += `Invoking Student("akshay", 1):\n`;
+        log += `2-Param Constructor: Name = akshay, Roll No = 1\n\n`;
+        log += `Invoking Student("nilesh", 2, 90.2):\n`;
+        log += `3-Param Constructor: Name = nilesh, Roll No = 2, Marks = 90.2\n\n`;
+        log += `[Part 2: Method Overloading in Class B]\n`;
+        log += `Invoking b1.area(${radius}):\n`;
+        log += `Area of circle (r=${radius}): ${circleArea.toFixed(1)}\n\n`;
+        log += `Invoking b1.area(${rectL}, ${rectB}):\n`;
+        log += `Area of rectangle (l=${rectL}, b=${rectB}): ${rectArea}\n\n`;
+        log += `[Part 3: Command-Line Argument Simulation (Integer.parseInt)]\n`;
+        log += `Simulating args = ["${radius}", "${rectL}", "${rectB}"]:\n`;
+        log += `Area of circle: ${circleArea.toFixed(1)}\n`;
+        log += `Area of rectangle: ${rectArea}\n\n`;
+        log += `Compile-Time (Static) Polymorphism verified with exit code 0.`;
         break;
       }
 
@@ -1303,38 +1301,44 @@ function executeSimulatorAlgorithm() {
         const numB = Number(document.getElementById('sim-num-b')?.value || 0);
 
         log += `==================================================\n`;
-        log += `    INHERITANCE & EXCEPTION HANDLING IN JAVA       \n`;
+        log += `  INHERITANCE TYPES & EXCEPTION HANDLING (Java 3.pdf)\n`;
         log += `==================================================\n\n`;
-        log += `[Section 1: Multi-Level Inheritance Demonstration]\n`;
-        log += `Instantiating derived class Manager (subclass of Employee)...\n`;
-        log += `Invoked super(id, name, department, baseSalary) via super() constructor chaining.\n`;
-        log += `--------------------------------------------------\n`;
-        log += `Employee ID : EMP-101\n`;
-        log += `Name        : Pushkar Ravindra Mhatre\n`;
-        log += `Department  : Software Engineering\n`;
-        log += `Base Salary : Rs. 85,000.00\n`;
-        log += `Manager Bonus & Allowance: Rs. 20,000.00\n`;
-        log += `Net Remuneration: Rs. 1,05,000.00\n`;
-        log += `--------------------------------------------------\n\n`;
-        log += `[Section 2: Built-in Exception Handling (ArithmeticException)]\n`;
+        log += `[Section 1: Constructor Chaining Across Hierarchy]\n`;
+        log += `Calling constructor of A:\n`;
+        log += `Inside Default Constructor of A\n\n`;
+        log += `Calling constructor of B (Single Inheritance: B extends A):\n`;
+        log += `Inside Default Constructor of A\n`;
+        log += `Inside Default Constructor of B\n\n`;
+        log += `Calling constructor of C (Multilevel Inheritance: C extends B):\n`;
+        log += `Inside Default Constructor of A\n`;
+        log += `Inside Default Constructor of B\n`;
+        log += `Inside constructor of C\n\n`;
+        log += `Calling constructor of D (Multiple Inheritance via Interfaces D1, D2):\n`;
+        log += `Inside Default Constructor of A\n`;
+        log += `display function Inside class A [i=0, s=null]\n`;
+        log += `display1 of interface D1 implemented in class D\n`;
+        log += `display2 of interface D2 implemented in class D\n\n`;
+        log += `[Section 2: Method Overriding & State Access]\n`;
+        log += `a.setS("Pushkar Mhatre"); a.setI(64);\n`;
+        log += `display function Inside class A [i=64, s=Pushkar Mhatre]\n`;
+        log += `display function Inside class B\n`;
+        log += `display function Inside class C\n\n`;
+        log += `[Section 3: Exception Handling (try-catch-finally)]\n`;
         log += `Attempting division: ${numA} / ${numB}...\n`;
         if (numB === 0) {
           log += `[CAUGHT ArithmeticException]: / by zero\n`;
-          log += `Exception message: Division by zero is mathematically undefined.\n`;
-          log += `[Finally Block]: Execution cleanup complete. Continuing program flow...\n\n`;
+          log += `[Finally Block 1]: Division cleanup complete.\n\n`;
         } else {
           log += `Result = ${(numA / numB).toFixed(2)}\n`;
-          log += `[Finally Block]: Clean execution without arithmetic fault.\n\n`;
+          log += `[Finally Block 1]: Division completed cleanly.\n\n`;
         }
-
-        log += `[Section 3: User-Defined Checked Exception (InvalidAgeException)]\n`;
         log += `Verifying voter registration for candidate age: ${testAge}...\n`;
         if (testAge < 18) {
-          log += `[CAUGHT InvalidAgeException]: Candidate age ${testAge} is ineligible for voting!\n`;
-          log += `[Finally Block]: Age verification transaction closed.\n`;
+          log += `[CAUGHT InvalidAgeException]: Age ${testAge} is ineligible! Minimum required age is 18.\n`;
+          log += `[Finally Block 2]: Age verification transaction logged.\n`;
         } else {
-          log += `[SUCCESS]: Candidate age ${testAge} is eligible to vote.\n`;
-          log += `[Finally Block]: Age verification transaction closed.\n`;
+          log += `[SUCCESS]: Candidate age ${testAge} is verified and eligible to vote.\n`;
+          log += `[Finally Block 2]: Age verification transaction logged.\n`;
         }
         break;
       }
