@@ -1105,18 +1105,14 @@ function selectSimulatorAlgorithm(expId) {
 
   if (expId === 'exp-1') {
     html += `
-      <div style="display: grid; grid-template-columns: 2fr 1fr 2fr; gap: 0.75rem;">
+      <div style="display: grid; grid-template-columns: 1fr 2fr; gap: 0.75rem;">
         <div style="display: flex; flex-direction: column; gap: 0.4rem;">
-          <label style="font-size: 0.75rem; font-weight: 600; color: var(--text-secondary);">Student Full Name:</label>
-          <input type="text" id="sim-student-name" class="sandbox-textarea" style="height: 40px; padding: 0.5rem 0.75rem;" value="${config.defaultName}">
+          <label style="font-size: 0.75rem; font-weight: 600; color: var(--text-secondary);">Student ID (s1.id):</label>
+          <input type="number" id="sim-student-id" class="sandbox-textarea" style="height: 40px; padding: 0.5rem 0.75rem;" value="${config.defaultId || 10}">
         </div>
         <div style="display: flex; flex-direction: column; gap: 0.4rem;">
-          <label style="font-size: 0.75rem; font-weight: 600; color: var(--text-secondary);">Roll Number:</label>
-          <input type="number" id="sim-student-roll" class="sandbox-textarea" style="height: 40px; padding: 0.5rem 0.75rem;" value="${config.defaultRoll}">
-        </div>
-        <div style="display: flex; flex-direction: column; gap: 0.4rem;">
-          <label style="font-size: 0.75rem; font-weight: 600; color: var(--text-secondary);">Marks (Java, DSA, WebTech):</label>
-          <input type="text" id="sim-student-marks" class="sandbox-textarea" style="height: 40px; padding: 0.5rem 0.75rem;" value="${config.defaultMarks}">
+          <label style="font-size: 0.75rem; font-weight: 600; color: var(--text-secondary);">Student Name (s1.n):</label>
+          <input type="text" id="sim-student-name" class="sandbox-textarea" style="height: 40px; padding: 0.5rem 0.75rem;" value="${config.defaultName || 'Alice'}">
         </div>
       </div>
     `;
@@ -1227,38 +1223,19 @@ function executeSimulatorAlgorithm() {
   try {
     switch (expId) {
       case 'exp-1': {
-        const name = document.getElementById('sim-student-name')?.value || 'Pushkar Ravindra Mhatre';
-        const roll = Number(document.getElementById('sim-student-roll')?.value || 64);
-        const marksStr = document.getElementById('sim-student-marks')?.value || '92, 88, 95';
-        const marks = marksStr.split(/[\s,]+/).filter(x => x.length > 0).map(Number);
-        const m1 = marks[0] || 0;
-        const m2 = marks[1] || 0;
-        const m3 = marks[2] || 0;
-        const total = m1 + m2 + m3;
-        const percentage = (total / 300.0) * 100.0;
-        let grade = '';
-        if (percentage >= 90.0) grade = 'A+ (Distinction)';
-        else if (percentage >= 75.0) grade = 'A (First Class)';
-        else if (percentage >= 60.0) grade = 'B (Second Class)';
-        else if (percentage >= 40.0) grade = 'C (Pass Class)';
-        else grade = 'F (Fail)';
+        const id = Number(document.getElementById('sim-student-id')?.value || 10);
+        const name = document.getElementById('sim-student-name')?.value || 'Alice';
 
         log += `==================================================\n`;
-        log += `         STUDENT ACADEMIC REPORT PORTAL           \n`;
+        log += `   PROGRAM ON CLASSES AND OBJECTS (g1.docx)       \n`;
         log += `==================================================\n`;
-        log += `Instantiating Student object with 'new' keyword...\n`;
-        log += `Heap memory allocated for Student instance @ 0x7b23f81\n\n`;
-        log += `--------------------------------------------------\n`;
-        log += `Roll Number : ${roll}\n`;
-        log += `Student Name: ${name}\n`;
-        log += `Department  : Computer Engineering\n`;
-        log += `Subject Marks: Java: ${m1.toFixed(1)} | DSA: ${m2.toFixed(1)} | WebTech: ${m3.toFixed(1)}\n`;
-        log += `Total Marks : ${total.toFixed(1)} / 300.0\n`;
-        log += `Percentage  : ${percentage.toFixed(2)}%\n`;
-        log += `Final Grade : ${grade}\n`;
-        log += `--------------------------------------------------\n\n`;
-        log += `Demonstrating Object State Independence:\n`;
-        log += `Object s1 and Object s2 maintain isolated copies of instance fields.\n`;
+        log += `javac Main.java\n`;
+        log += `java Main\n\n`;
+        log += `[Program Execution Output]\n`;
+        log += `${id}\n`;
+        log += `${name}\n\n`;
+        log += `Field values initialized via Student(int id, String n) constructor.\n`;
+        log += `s1.id = ${id}, s1.n = ${name}\n`;
         log += `JVM execution finished with exit code 0.`;
         break;
       }
