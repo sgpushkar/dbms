@@ -1,17 +1,18 @@
 /**
- * Analysis of Algorithms (AOA) Laboratory Practicals Portal
+ * Full Stack Java Programming & Web Technologies Practicals Portal
  * Interactive Application Engine
- * Supports dynamic rendering, C syntax highlighting, category filtering,
- * instant search, zoomable lightbox, copy-to-clipboard, view modes,
- * and a full in-browser interactive Algorithm Simulator.
+ * Supports dynamic rendering, Java & JavaScript syntax highlighting, category filtering,
+ * instant search, zoomable lightbox, accessible 1-click copy-to-clipboard, view modes,
+ * embedded live interactive web widgets (Stopwatch, Email Validator, DOM Color Changer),
+ * and a full in-browser interactive Java & Web Technologies Playground / Simulator.
  */
 
 // Application State
 const state = {
-  theme: localStorage.getItem('aoa_theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'),
+  theme: localStorage.getItem('java_theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'),
   currentCategory: 'ALL',
   searchQuery: '',
-  layoutView: localStorage.getItem('aoa_layout') || 'split', // 'split', 'stacked', 'code-only', 'output-only'
+  layoutView: localStorage.getItem('java_layout') || 'split', // 'split', 'stacked', 'code-only', 'output-only'
   lightbox: {
     isOpen: false,
     images: [],
@@ -20,6 +21,21 @@ const state = {
   },
   simulator: {
     selectedAlgorithm: 'exp-1'
+  },
+  // Live widget states
+  stopwatch: {
+    elapsedTime: 0,
+    startTime: 0,
+    timerInterval: null,
+    isRunning: false
+  },
+  domColorChanger: {
+    colors: ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#06b6d4', '#14b8a6'],
+    currentIndex: 0,
+    intervalId: null,
+    progressIntervalId: null,
+    remainingSeconds: 5.0,
+    isPaused: false
   }
 };
 
@@ -33,13 +49,14 @@ document.addEventListener('DOMContentLoaded', () => {
   collectLightboxImages();
   setupScrollSpy();
   initSimulatorControls();
+  initLiveWidgets();
 });
 
 // Theme Management
 function applyTheme(theme) {
   state.theme = theme;
   document.documentElement.setAttribute('data-theme', theme);
-  localStorage.setItem('aoa_theme', theme);
+  localStorage.setItem('java_theme', theme);
   const themeBtn = document.getElementById('btn-toggle-theme');
   if (themeBtn) {
     themeBtn.innerHTML = theme === 'dark' 
@@ -52,7 +69,7 @@ function applyTheme(theme) {
 function applyLayoutView(view) {
   state.layoutView = view;
   document.body.setAttribute('data-view', view);
-  localStorage.setItem('aoa_layout', view);
+  localStorage.setItem('java_layout', view);
   document.querySelectorAll('.layout-btn').forEach(btn => {
     btn.classList.toggle('active', btn.dataset.view === view);
   });
@@ -68,7 +85,7 @@ function buildSidebarNav() {
       <a href="#${exp.id}" onclick="smoothScrollTo('${exp.id}', event)">
         <span class="exp-badge-pill">${exp.number}</span>
         <span class="exp-nav-text">${escapeHtml(exp.title)}</span>
-        <button class="sidebar-quick-copy" onclick="copyExpCodeById('${exp.id}', event, this)" title="Quick Copy C Code (1-Click)" aria-label="Copy code for ${escapeHtml(exp.title)}">
+        <button class="sidebar-quick-copy" onclick="copyExpCodeById('${exp.id}', event, this)" title="Quick Copy Program Code (1-Click)" aria-label="Copy code for ${escapeHtml(exp.title)}">
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
         </button>
       </a>
@@ -76,34 +93,37 @@ function buildSidebarNav() {
   `).join('');
 }
 
-// High-Contrast Syntax Highlighting for C Code
-function highlightCCode(code) {
+// High-Contrast Syntax Highlighting for Java and JavaScript Source Code
+function highlightJavaAndJS(code) {
   let formatted = escapeHtml(code);
 
-  // Preprocessor directives (#include, #define)
-  formatted = formatted.replace(/(#(?:include|define|ifdef|ifndef|endif)[^\n\r]*)/g, '<span class="c-preprocessor">$1</span>');
+  // Annotations & Preprocessor (@Override, #include, <!DOCTYPE>)
+  formatted = formatted.replace(/(@[a-zA-Z_]\w*)/g, '<span class="syntax-annotation">$1</span>');
 
-  // String literals
-  formatted = formatted.replace(/(&quot;[\s\S]*?&quot;)/g, '<span class="c-string">$1</span>');
+  // String literals (Double quoted & Single quoted & template literals)
+  formatted = formatted.replace(/(&quot;[\s\S]*?&quot;)/g, '<span class="syntax-string">$1</span>');
+  formatted = formatted.replace(/(&#039;[\s\S]*?&#039;)/g, '<span class="syntax-string">$1</span>');
+  formatted = formatted.replace(/(`[\s\S]*?`)/g, '<span class="syntax-string">$1</span>');
 
-  // Multi-line and single-line comments
-  formatted = formatted.replace(/(\/\*[\s\S]*?\*\/)/g, '<span class="c-comment">$1</span>');
-  formatted = formatted.replace(/(\/\/.*$)/gm, '<span class="c-comment">$1</span>');
+  // Comments (Multi-line and Single-line)
+  formatted = formatted.replace(/(\/\*[\s\S]*?\*\/)/g, '<span class="syntax-comment">$1</span>');
+  formatted = formatted.replace(/(\/\/.*$)/gm, '<span class="syntax-comment">$1</span>');
+  formatted = formatted.replace(/(&lt;!--[\s\S]*?--&gt;)/g, '<span class="syntax-comment">$1</span>');
 
-  // C Data Types
-  const types = /\b(void|int|char|float|double|struct|typedef|size_t)\b/g;
-  formatted = formatted.replace(types, '<span class="c-type">$1</span>');
+  // Core Java & JS Keywords
+  const keywords = /\b(class|public|private|protected|static|final|abstract|interface|extends|implements|new|this|super|return|if|else|for|while|do|switch|case|break|continue|default|try|catch|finally|throw|throws|import|package|null|true|false|void|const|let|var|function|async|await|typeof|instanceof)\b/g;
+  formatted = formatted.replace(keywords, '<span class="syntax-keyword">$1</span>');
 
-  // Control Flow Keywords
-  const keywords = /\b(for|while|if|else|return|break|continue|switch|case|default|static|const|sizeof)\b/g;
-  formatted = formatted.replace(keywords, '<span class="c-keyword">$1</span>');
+  // Core Types & Built-in Objects
+  const types = /\b(int|double|float|char|boolean|byte|short|long|String|System|Scanner|Math|Exception|ArithmeticException|InvalidAgeException|Student|Box|ShapeCalculator|Employee|Manager|Document|Window|Object|Array|Date|Number)\b/g;
+  formatted = formatted.replace(types, '<span class="syntax-type">$1</span>');
 
-  // Standard Library & Core Functions
-  const functions = /\b(printf|scanf|clrscr|getch|abs|strlen|quicksort|mergeSort|merge|nqueen|place|display|find|uni|graphColoring|isSafe|main)\b/g;
-  formatted = formatted.replace(functions, '<span class="c-function">$1</span>');
+  // Core Methods, Built-in APIs, and Functions
+  const functions = /\b(println|print|printf|out|main|calculateTotal|calculatePercentage|getGrade|displayReport|calculateVolume|area|displayManagerInfo|displayEmployee|checkAge|getElementById|querySelector|querySelectorAll|addEventListener|setInterval|clearInterval|setTimeout|clearTimeout|alert|prompt|padZero|changeColor|validateEmail|trim|indexOf|lastIndexOf|toUpperCase|toLowerCase|slice|substring|push|pop|toFixed)\b/g;
+  formatted = formatted.replace(functions, '<span class="syntax-function">$1</span>');
 
-  // Numbers
-  formatted = formatted.replace(/\b(\d+)\b/g, '<span class="c-number">$1</span>');
+  // Numeric Literals
+  formatted = formatted.replace(/\b(\d+(?:\.\d+)?f?d?)\b/g, '<span class="syntax-number">$1</span>');
 
   return formatted;
 }
@@ -113,7 +133,7 @@ function renderCodeWithLineNumbers(rawCode) {
   const lines = rawCode.trim().split('\n');
   return lines.map((line, idx) => {
     const lineNum = idx + 1;
-    const highlighted = highlightCCode(line);
+    const highlighted = highlightJavaAndJS(line);
     return `<div class="code-line"><span class="line-number">${lineNum}</span><span class="line-content">${highlighted || '&nbsp;'}</span></div>`;
   }).join('');
 }
@@ -180,7 +200,7 @@ function renderExperimentSection(exp, searchQuery) {
       </div>
 
       <div class="exp-body">
-        <!-- Aim, Theory & Complexities -->
+        <!-- Aim, Theory & Technical Specifications -->
         <div class="aim-theory-box">
           <div class="aim-title">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>
@@ -188,37 +208,37 @@ function renderExperimentSection(exp, searchQuery) {
           </div>
           <div class="aim-desc">${highlightSearchTerm(exp.aim, searchQuery)}</div>
 
-          <!-- Time & Space Complexity Cards Grid (Color Coded & Accessible) -->
+          <!-- Complexity & Execution Profile Cards Grid -->
           <div class="complexity-grid">
             <div class="complexity-card card-best">
-              <span class="complexity-label">Best Case Time</span>
+              <span class="complexity-label">Execution Time / Speed</span>
               <span class="complexity-value">${exp.complexities.bestTime}</span>
             </div>
             <div class="complexity-card card-avg">
-              <span class="complexity-label">Average Case Time</span>
+              <span class="complexity-label">Runtime Paradigm</span>
               <span class="complexity-value">${exp.complexities.avgTime}</span>
             </div>
             <div class="complexity-card card-worst">
-              <span class="complexity-label">Worst Case Time</span>
+              <span class="complexity-label">Invocation Dispatch</span>
               <span class="complexity-value">${exp.complexities.worstTime}</span>
             </div>
             <div class="complexity-card card-space">
-              <span class="complexity-label">Space Complexity</span>
+              <span class="complexity-label">Memory Allocation</span>
               <span class="complexity-value">${exp.complexities.space}</span>
             </div>
           </div>
           
           <details class="details-collapsible">
-            <summary>View Theoretical Background, Recurrence & Learning Outcomes</summary>
+            <summary>View Theoretical Background, Key Concepts & Learning Outcomes</summary>
             <div class="theory-content">
               <p>${exp.theory}</p>
               ${exp.complexities.recurrence ? `
                 <div style="margin-top: 0.75rem; font-size: 0.825rem; font-family: var(--font-mono); color: var(--text-primary); background: var(--bg-surface-secondary); padding: 0.5rem 0.75rem; border-radius: 4px; border: 1px solid var(--border-color);">
-                  <strong>Recurrence Relation:</strong> ${exp.complexities.recurrence}
+                  <strong>Architectural Focus:</strong> ${exp.complexities.recurrence}
                 </div>
               ` : ''}
               ${exp.learningOutcomes ? `
-                <div style="font-weight: 700; margin-top: 0.75rem; color: var(--text-primary); font-size: 0.8rem;">Key Takeaways & Outcomes:</div>
+                <div style="font-weight: 700; margin-top: 0.75rem; color: var(--text-primary); font-size: 0.8rem;">Key Takeaways & Learning Outcomes:</div>
                 <ul class="learning-list">
                   ${exp.learningOutcomes.map(item => `<li>${item}</li>`).join('')}
                 </ul>
@@ -227,28 +247,7 @@ function renderExperimentSection(exp, searchQuery) {
           </details>
         </div>
 
-        <!-- Full PDF Lab Manual Pages Strip -->
-        ${exp.fullPages && exp.fullPages.length > 0 ? `
-          <div class="full-pages-box">
-            <div class="full-pages-header">
-              <span class="full-pages-title">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
-                Original Lab Manual Document Pages (${exp.fullPages.length} Pages)
-              </span>
-              <span style="font-size: 0.7rem; color: var(--text-muted);">Click any page to zoom in high-resolution lightbox</span>
-            </div>
-            <div class="pages-strip">
-              ${exp.fullPages.map(pg => `
-                <div class="page-thumb-card" onclick="openLightboxImage('${pg.image}', '${escapeHtml(pg.title)}')">
-                  <img src="${pg.image}" alt="${pg.title}" loading="lazy">
-                  <div class="page-thumb-label">Page ${pg.page}</div>
-                </div>
-              `).join('')}
-            </div>
-          </div>
-        ` : ''}
-
-        <!-- Program Code & Terminal Execution Outputs -->
+        <!-- Program Code, Interactive Live Apps & Terminal Execution Outputs -->
         <div class="queries-container">
           ${exp.items ? exp.items.map(item => renderProgramCard(item, exp, searchQuery)).join('') : ''}
         </div>
@@ -257,10 +256,14 @@ function renderExperimentSection(exp, searchQuery) {
   `;
 }
 
-// Render Single Program Card (with Sticky Copy Bar & Line Numbers)
+// Render Single Program Card (with Sticky Copy Bar, Live Interactive App & Line Numbers)
 function renderProgramCard(item, exp, searchQuery) {
   const rawCode = item.code || '';
   const lineCount = rawCode.trim().split('\n').length;
+  const isWebInteractive = (exp.id === 'exp-4' || exp.id === 'exp-5' || exp.id === 'exp-6');
+  const langLabel = exp.id.startsWith('exp-1') || exp.id.startsWith('exp-2') || exp.id.startsWith('exp-3') 
+    ? 'Java SE (JDK 21+)' 
+    : 'HTML5 & JS (ES6+)';
 
   return `
     <div class="query-card" id="${item.id}">
@@ -271,20 +274,20 @@ function renderProgramCard(item, exp, searchQuery) {
           <span class="query-type-badge">${item.type}</span>
         </div>
         <div class="query-actions">
-          <button class="btn-query-action btn-copy" onclick="copyCodeByItemId('${item.id}', this)" aria-label="Copy C Source Code" title="Copy full C program (1-Click)">
+          <button class="btn-query-action btn-copy" onclick="copyCodeByItemId('${item.id}', this)" aria-label="Copy Program Source Code" title="Copy full source code to clipboard">
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
-            <span>Copy C Code</span>
+            <span>Copy Code</span>
           </button>
           <button class="btn-query-action" onclick="openSimulatorWithExp('${exp.id}')">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="5 3 19 12 5 21 5 3"/></svg>
-            <span>Run in Simulator</span>
+            <span>Run in Playground</span>
           </button>
         </div>
       </div>
 
-      <!-- Split Layout: Code on Left, Real Screenshot / Terminal on Right -->
+      <!-- Split Layout: Code on Left, Real Screenshot / Live Output on Right -->
       <div class="query-content-grid">
-        <!-- Left: C Code Pane with Sticky Header -->
+        <!-- Left: Code Pane with Sticky Header -->
         <div class="query-code-pane">
           <div class="code-header-bar">
             <div class="code-dots">
@@ -292,28 +295,28 @@ function renderProgramCard(item, exp, searchQuery) {
               <span class="code-dot dot-yellow"></span>
               <span class="code-dot dot-green"></span>
             </div>
-            <span>${exp.title} • C Source Code (ANSI C)</span>
+            <span>${exp.title} • ${item.type}</span>
           </div>
 
           <!-- Sticky Code Toolbar: Always Visible While Scrolling! -->
           <div class="code-sticky-toolbar">
             <div class="code-lang-info">
-              <span>C99 / Turbo C</span>
+              <span>${langLabel}</span>
               <span class="code-line-badge">${lineCount} lines</span>
             </div>
             <div class="code-toolbar-actions">
-              <button class="btn-sticky-copy" onclick="copyCodeByItemId('${item.id}', this)" aria-label="Quick Copy C Code" title="Copy full C program (1-Click)">
+              <button class="btn-sticky-copy" onclick="copyCodeByItemId('${item.id}', this)" aria-label="Quick Copy Source Code" title="Copy full program to clipboard">
                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
                 <span>Copy Code</span>
               </button>
-              <button class="btn-sticky-run" onclick="openSimulatorWithExp('${exp.id}')" title="Test in interactive simulator">
+              <button class="btn-sticky-run" onclick="openSimulatorWithExp('${exp.id}')" title="Test in interactive playground">
                 <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="5 3 19 12 5 21 5 3"/></svg>
                 <span>Run</span>
               </button>
             </div>
           </div>
 
-          <!-- Line-numbered C Code Pre -->
+          <!-- Line-numbered Code Pre -->
           <pre class="query-code-pre"><code>${renderCodeWithLineNumbers(rawCode)}</code></pre>
 
           <div class="query-desc-box">
@@ -333,6 +336,12 @@ function renderProgramCard(item, exp, searchQuery) {
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/></svg>
                 Console View
               </button>
+              ${isWebInteractive ? `
+                <button class="output-tab-btn" onclick="switchOutputTab(this, 'interactive')">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+                  Live Interactive App
+                </button>
+              ` : ''}
             </div>
             <span class="output-status-pill">${escapeHtml(item.status || 'Execution verified')}</span>
           </div>
@@ -356,22 +365,29 @@ function renderProgramCard(item, exp, searchQuery) {
               </div>
             </div>
 
-            <!-- Formatted Terminal View -->
+            <!-- Formatted Terminal Console View -->
             <div class="tab-pane-terminal" style="display: none;">
               <div class="terminal-console-box">
                 <div class="terminal-header">
-                  <span>Turbo C++ / GCC Terminal Console</span>
+                  <span>OpenJDK 24 / Node.js Runtime Console</span>
                   <div style="display: flex; gap: 0.5rem; align-items: center;">
                     <button class="btn-terminal-copy" onclick="copyTerminalByItemId('${item.id}', this)" title="Copy terminal output text">
                       <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
                       <span>Copy Output</span>
                     </button>
-                    <span class="terminal-tag">Execution Log</span>
+                    <span class="terminal-tag">Exit Code: 0</span>
                   </div>
                 </div>
                 <div class="terminal-content">${renderFormattedTerminal(item.terminalOutput)}</div>
               </div>
             </div>
+
+            <!-- Embedded Live Interactive App Tab (For Exp 4, 5, 6) -->
+            ${isWebInteractive ? `
+              <div class="tab-pane-interactive" style="display: none;">
+                ${renderLiveEmbeddedWidget(exp.id)}
+              </div>
+            ` : ''}
           </div>
         </div>
       </div>
@@ -379,13 +395,114 @@ function renderProgramCard(item, exp, searchQuery) {
   `;
 }
 
-// Format Terminal Output with Input Highlights
+// Render Embedded Live Interactive Widgets for Web Tech Experiments
+function renderLiveEmbeddedWidget(expId) {
+  if (expId === 'exp-4') {
+    return `
+      <div class="live-widget-wrapper">
+        <div class="live-widget-header">
+          <div class="live-widget-title">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            Interactive Stopwatch Web Application (Live JS Timer)
+          </div>
+          <span class="live-badge-active">Active DOM</span>
+        </div>
+        <div class="stopwatch-container">
+          <div class="stopwatch-display" id="card-sw-display">00:00:00:00</div>
+          <div class="stopwatch-controls">
+            <button class="btn-sw btn-sw-start" onclick="startCardStopwatch()">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+              Start
+            </button>
+            <button class="btn-sw btn-sw-stop" onclick="stopCardStopwatch()">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>
+              Stop
+            </button>
+            <button class="btn-sw btn-sw-reset" onclick="resetCardStopwatch()">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg>
+              Reset
+            </button>
+          </div>
+          <p style="font-size: 0.75rem; color: #94a3b8; text-align: center; margin: 0;">
+            Real-time timer using <code>setInterval(updateTime, 10)</code> with millisecond precision.
+          </p>
+        </div>
+      </div>
+    `;
+  } else if (expId === 'exp-5') {
+    return `
+      <div class="live-widget-wrapper">
+        <div class="live-widget-header">
+          <div class="live-widget-title">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+            Email Address Validator with Alert Dialog
+          </div>
+          <span class="live-badge-active">Input Verification</span>
+        </div>
+        <div class="email-validator-box">
+          <div class="email-form-row">
+            <input type="text" id="card-email-input" class="email-input-field" value="pushkarmhatre@gmail.com" placeholder="Enter email to validate...">
+            <button class="btn-validate-email" onclick="validateCardEmail()">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+              Validate
+            </button>
+          </div>
+          <div class="email-diagnostics" id="card-email-diagnostics">
+            <div class="diag-item diag-valid">✓ Has '@' symbol at index 13</div>
+            <div class="diag-item diag-valid">✓ Has '.' symbol after '@' at index 19</div>
+            <div class="diag-item diag-valid">✓ Valid email syntax verified</div>
+          </div>
+          <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+            <button class="filter-chip" style="font-size: 0.7rem; padding: 0.2rem 0.5rem;" onclick="setCardEmailTest('invalid-email-no-at.com')">Test: Missing '@'</button>
+            <button class="filter-chip" style="font-size: 0.7rem; padding: 0.2rem 0.5rem;" onclick="setCardEmailTest('user@nodotcom')">Test: Missing '.'</button>
+            <button class="filter-chip" style="font-size: 0.7rem; padding: 0.2rem 0.5rem;" onclick="setCardEmailTest('pushkarmhatre@gmail.com')">Test: Valid Email</button>
+          </div>
+        </div>
+      </div>
+    `;
+  } else if (expId === 'exp-6') {
+    return `
+      <div class="live-widget-wrapper">
+        <div class="live-widget-header">
+          <div class="live-widget-title">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 2a10 10 0 0 1 10 10"/></svg>
+            Automated DOM Background Color Transition (Every 5s)
+          </div>
+          <span class="live-badge-active">5s Timer Active</span>
+        </div>
+        <div class="dom-color-box">
+          <div class="dom-color-preview" id="card-dom-preview" style="background-color: #3b82f6;">
+            <div style="font-size: 1.1rem; font-weight: 800;" id="card-dom-color-name">Dodger Blue (#3b82f6)</div>
+            <div style="font-size: 0.75rem; opacity: 0.9; font-family: var(--font-mono);" id="card-dom-cycle-info">Cycle Step: 1 of 8</div>
+            <div class="dom-timer-progress" id="card-dom-progress"></div>
+          </div>
+          <div class="dom-color-controls">
+            <span class="dom-countdown-text" id="card-dom-countdown">Next color transition in: 5.0s</span>
+            <div style="display: flex; gap: 0.5rem;">
+              <button class="btn-dom-toggle" onclick="toggleCardDomTimer(this)">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>
+                <span>Pause</span>
+              </button>
+              <button class="btn-dom-toggle" onclick="cycleCardDomColorNow()">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+                Next Color
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
+  }
+  return '';
+}
+
+// Format Terminal Output
 function renderFormattedTerminal(output) {
   if (!output) return 'No console output logged.';
   return escapeHtml(output);
 }
 
-// Switch between Screenshot and Terminal Tab
+// Switch between Screenshot, Terminal, and Live Interactive Tab
 function switchOutputTab(btn, tabType) {
   const queryOutputPane = btn.closest('.query-output-pane');
   const tabs = queryOutputPane.querySelectorAll('.output-tab-btn');
@@ -394,13 +511,18 @@ function switchOutputTab(btn, tabType) {
 
   const screenshotPane = queryOutputPane.querySelector('.tab-pane-screenshot');
   const terminalPane = queryOutputPane.querySelector('.tab-pane-terminal');
+  const interactivePane = queryOutputPane.querySelector('.tab-pane-interactive');
 
-  if (tabType === 'screenshot') {
+  if (screenshotPane) screenshotPane.style.display = 'none';
+  if (terminalPane) terminalPane.style.display = 'none';
+  if (interactivePane) interactivePane.style.display = 'none';
+
+  if (tabType === 'screenshot' && screenshotPane) {
     screenshotPane.style.display = 'block';
-    terminalPane.style.display = 'none';
-  } else {
-    screenshotPane.style.display = 'none';
+  } else if (tabType === 'terminal' && terminalPane) {
     terminalPane.style.display = 'block';
+  } else if (tabType === 'interactive' && interactivePane) {
+    interactivePane.style.display = 'flex';
   }
 }
 
@@ -424,37 +546,42 @@ function showToast(message) {
   }, 2500);
 }
 
-// Unified, Robust Clipboard Engine (with Automatic Fallback for file:// and older browsers)
+// Unified, Robust Clipboard Engine (Works in HTTP, HTTPS, and file:/// Contexts)
 function copyTextToClipboard(text, btn, title) {
   if (!text) {
     showToast('⚠️ No content available to copy.');
     return;
   }
 
-  // Method 1: Try modern Async Clipboard API
-  if (navigator.clipboard && window.isSecureContext) {
+  // Attempt Modern Async Clipboard API first
+  if (navigator.clipboard && typeof navigator.clipboard.writeText === 'function') {
     navigator.clipboard.writeText(text).then(() => {
       onCopySuccess(btn, title);
     }).catch(err => {
-      console.warn('Async Clipboard API failed, attempting execCommand fallback...', err);
+      console.warn('Async Clipboard API failed, attempting textarea fallback...', err);
       fallbackCopyText(text, btn, title);
     });
   } else {
-    // Method 2: Fallback for file:// or restricted environments
+    // Textarea fallback for file:// or restricted environments
     fallbackCopyText(text, btn, title);
   }
 }
 
-// ExecCommand Fallback Engine using Temporary Off-screen Textarea
+// Reliable Textarea Copy Fallback
 function fallbackCopyText(text, btn, title) {
   try {
     const textArea = document.createElement('textarea');
     textArea.value = text;
-    textArea.setAttribute('readonly', '');
     textArea.style.position = 'fixed';
     textArea.style.top = '0';
-    textArea.style.left = '-9999px';
-    textArea.style.opacity = '0';
+    textArea.style.left = '0';
+    textArea.style.width = '2em';
+    textArea.style.height = '2em';
+    textArea.style.padding = '0';
+    textArea.style.border = 'none';
+    textArea.style.outline = 'none';
+    textArea.style.boxShadow = 'none';
+    textArea.style.background = 'transparent';
     document.body.appendChild(textArea);
     textArea.focus();
     textArea.select();
@@ -528,15 +655,10 @@ function copyExpCodeById(expId, event, btn) {
   copyTextToClipboard(exp.items[0].code, targetBtn, exp.title);
 }
 
-// Helper to escape raw string into JS attribute string
-function escapeJsString(str) {
-  return str.replace(/\\/g, '\\\\').replace(/`/g, '\\`').replace(/\$/g, '\\$');
-}
-
 // Lightbox Modal Controls
 function collectLightboxImages() {
   state.lightbox.images = [];
-  document.querySelectorAll('.screenshot-container, .page-thumb-card').forEach(el => {
+  document.querySelectorAll('.screenshot-container').forEach(el => {
     const img = el.querySelector('img');
     if (img && img.src) {
       const caption = el.getAttribute('onclick')?.match(/openLightboxImage\('([^']+)',\s*'([^']+)'\)/);
@@ -563,7 +685,7 @@ function openLightboxImage(src, title) {
 
   imgEl.src = src;
   imgEl.style.transform = `scale(${state.lightbox.zoom})`;
-  titleEl.textContent = title || 'Lab Journal Document';
+  titleEl.textContent = title || 'Lab Document Image';
   captionEl.textContent = title || '';
   counterEl.textContent = `${state.lightbox.currentIndex + 1} / ${state.lightbox.images.length}`;
 
@@ -683,7 +805,7 @@ function setupEventListeners() {
       } else if (e.key === 'Escape') {
         if (state.lightbox.isOpen) {
           closeLightbox();
-        } else if (document.getElementById('simulator-modal-backdrop').classList.contains('active')) {
+        } else if (document.getElementById('simulator-modal-backdrop')?.classList.contains('active')) {
           closeSimulator();
         } else if (document.activeElement === searchInput) {
           searchInput.blur();
@@ -753,8 +875,190 @@ function highlightSearchTerm(text, query) {
 }
 
 /* ===================================================================
-   Interactive Algorithm Simulator & Visualizer
-   Replaces SQL sandbox with comprehensive in-browser algorithm execution
+   Live Interactive Widgets Logic (Exp 4, 5, 6 in Cards)
+   =================================================================== */
+
+function initLiveWidgets() {
+  // Start the 5-second automatic DOM background color changer loop
+  startDomColorChangerLoop();
+}
+
+// Exp 4: Stopwatch Controller
+function formatStopwatchTime(ms) {
+  const hours = Math.floor(ms / 3600000);
+  const minutes = Math.floor((ms % 3600000) / 60000);
+  const seconds = Math.floor((ms % 60000) / 1000);
+  const centiseconds = Math.floor((ms % 1000) / 10);
+
+  const pad = (n) => String(n).padStart(2, '0');
+  return `${pad(hours)}:${pad(minutes)}:${pad(seconds)}:${pad(centiseconds)}`;
+}
+
+function startCardStopwatch() {
+  if (state.stopwatch.isRunning) return;
+  state.stopwatch.isRunning = true;
+  state.stopwatch.startTime = Date.now() - state.stopwatch.elapsedTime;
+  state.stopwatch.timerInterval = setInterval(() => {
+    state.stopwatch.elapsedTime = Date.now() - state.stopwatch.startTime;
+    const formatted = formatStopwatchTime(state.stopwatch.elapsedTime);
+    const display = document.getElementById('card-sw-display');
+    if (display) display.textContent = formatted;
+    const modalDisplay = document.getElementById('sim-sw-display');
+    if (modalDisplay) modalDisplay.textContent = formatted;
+  }, 10);
+}
+
+function stopCardStopwatch() {
+  if (!state.stopwatch.isRunning) return;
+  state.stopwatch.isRunning = false;
+  clearInterval(state.stopwatch.timerInterval);
+}
+
+function resetCardStopwatch() {
+  stopCardStopwatch();
+  state.stopwatch.elapsedTime = 0;
+  const display = document.getElementById('card-sw-display');
+  if (display) display.textContent = '00:00:00:00';
+  const modalDisplay = document.getElementById('sim-sw-display');
+  if (modalDisplay) modalDisplay.textContent = '00:00:00:00';
+}
+
+// Exp 5: Email Validation Controller
+function validateCardEmail() {
+  const input = document.getElementById('card-email-input');
+  const diagnostics = document.getElementById('card-email-diagnostics');
+  if (!input || !diagnostics) return;
+
+  const email = input.value.trim();
+  const atPos = email.indexOf('@');
+  const dotPos = email.lastIndexOf('.');
+
+  let hasAt = (atPos > 0);
+  let hasDot = (dotPos > atPos + 1 && dotPos < email.length - 1);
+  let isValid = hasAt && hasDot;
+
+  let diagHtml = '';
+  if (hasAt) {
+    diagHtml += `<div class="diag-item diag-valid">✓ Has '@' symbol at index ${atPos}</div>`;
+  } else {
+    diagHtml += `<div class="diag-item diag-invalid">✗ Missing or misplaced '@' character (Requirement 1 failed)</div>`;
+  }
+
+  if (hasDot) {
+    diagHtml += `<div class="diag-item diag-valid">✓ Has '.' dot symbol after '@' at index ${dotPos}</div>`;
+  } else {
+    diagHtml += `<div class="diag-item diag-invalid">✗ Missing or misplaced '.' character after '@' (Requirement 2 failed)</div>`;
+  }
+
+  if (isValid) {
+    diagHtml += `<div class="diag-item diag-valid" style="margin-top:0.35rem; font-weight:800;">✓ Email address is valid and accepted!</div>`;
+    showToast('✓ Valid email address accepted!');
+  } else {
+    diagHtml += `<div class="diag-item diag-invalid" style="margin-top:0.35rem; font-weight:800;">✗ Validation failed: Prompting user to re-enter.</div>`;
+    // Trigger the exact alert dialog required by syllabus
+    setTimeout(() => {
+      alert(`Invalid Email Address!\n\nReason: Email must contain both '@' and '.' characters in valid positions.\n\nPlease re-enter a valid email address.`);
+      input.focus();
+      input.select();
+    }, 50);
+  }
+
+  diagnostics.innerHTML = diagHtml;
+}
+
+function setCardEmailTest(val) {
+  const input = document.getElementById('card-email-input');
+  if (input) {
+    input.value = val;
+    validateCardEmail();
+  }
+}
+
+// Exp 6: DOM 5-Second Background Color Controller
+function startDomColorChangerLoop() {
+  const colors = [
+    { name: 'Dodger Blue', hex: '#3b82f6' },
+    { name: 'Emerald Green', hex: '#10b981' },
+    { name: 'Amber Orange', hex: '#f59e0b' },
+    { name: 'Ruby Crimson', hex: '#ef4444' },
+    { name: 'Amethyst Violet', hex: '#8b5cf6' },
+    { name: 'Rose Coral', hex: '#ec4899' },
+    { name: 'Cyan Aqua', hex: '#06b6d4' },
+    { name: 'Deep Teal', hex: '#14b8a6' }
+  ];
+
+  let currentIndex = 0;
+  let remainingMs = 5000;
+  const intervalMs = 100;
+
+  setInterval(() => {
+    if (state.domColorChanger.isPaused) return;
+
+    remainingMs -= intervalMs;
+    if (remainingMs <= 0) {
+      remainingMs = 5000;
+      currentIndex = (currentIndex + 1) % colors.length;
+      applyDomColor(colors[currentIndex], currentIndex, colors.length);
+    }
+
+    // Update progress bar and countdown text
+    const progressPct = (remainingMs / 5000) * 100;
+    const countdownSec = (remainingMs / 1000).toFixed(1);
+
+    const cardProgress = document.getElementById('card-dom-progress');
+    const cardCountdown = document.getElementById('card-dom-countdown');
+    if (cardProgress) cardProgress.style.width = `${progressPct}%`;
+    if (cardCountdown) cardCountdown.textContent = `Next color transition in: ${countdownSec}s`;
+
+    const simProgress = document.getElementById('sim-dom-progress');
+    const simCountdown = document.getElementById('sim-dom-countdown');
+    if (simProgress) simProgress.style.width = `${progressPct}%`;
+    if (simCountdown) simCountdown.textContent = `Next color transition in: ${countdownSec}s`;
+  }, intervalMs);
+}
+
+function applyDomColor(colorObj, index, total) {
+  const cardPreview = document.getElementById('card-dom-preview');
+  const cardColorName = document.getElementById('card-dom-color-name');
+  const cardCycleInfo = document.getElementById('card-dom-cycle-info');
+
+  if (cardPreview) cardPreview.style.backgroundColor = colorObj.hex;
+  if (cardColorName) cardColorName.textContent = `${colorObj.name} (${colorObj.hex})`;
+  if (cardCycleInfo) cardCycleInfo.textContent = `Cycle Step: ${index + 1} of ${total}`;
+
+  const simPreview = document.getElementById('sim-dom-preview');
+  const simColorName = document.getElementById('sim-dom-color-name');
+  if (simPreview) simPreview.style.backgroundColor = colorObj.hex;
+  if (simColorName) simColorName.textContent = `${colorObj.name} (${colorObj.hex})`;
+}
+
+function toggleCardDomTimer(btn) {
+  state.domColorChanger.isPaused = !state.domColorChanger.isPaused;
+  const span = btn ? btn.querySelector('span') : null;
+  if (span) {
+    span.textContent = state.domColorChanger.isPaused ? 'Resume' : 'Pause';
+  }
+  showToast(state.domColorChanger.isPaused ? '⏸ DOM color changer paused' : '▶ DOM color changer resumed');
+}
+
+function cycleCardDomColorNow() {
+  const colors = [
+    { name: 'Dodger Blue', hex: '#3b82f6' },
+    { name: 'Emerald Green', hex: '#10b981' },
+    { name: 'Amber Orange', hex: '#f59e0b' },
+    { name: 'Ruby Crimson', hex: '#ef4444' },
+    { name: 'Amethyst Violet', hex: '#8b5cf6' },
+    { name: 'Rose Coral', hex: '#ec4899' },
+    { name: 'Cyan Aqua', hex: '#06b6d4' },
+    { name: 'Deep Teal', hex: '#14b8a6' }
+  ];
+  state.domColorChanger.currentIndex = (state.domColorChanger.currentIndex + 1) % colors.length;
+  applyDomColor(colors[state.domColorChanger.currentIndex], state.domColorChanger.currentIndex, colors.length);
+}
+
+/* ===================================================================
+   Interactive Playground / Simulator Engine (Modal)
+   Simulates all 6 Java & Web Technologies practicals in-browser
    =================================================================== */
 
 function initSimulatorControls() {
@@ -763,15 +1067,19 @@ function initSimulatorControls() {
 
 function openSimulatorWithExp(expId) {
   const modal = document.getElementById('simulator-modal-backdrop');
-  modal.classList.add('active');
-  document.body.style.overflow = 'hidden';
-  selectSimulatorAlgorithm(expId);
+  if (modal) {
+    modal.classList.add('active');
+    document.body.style.overflow = 'hidden';
+    selectSimulatorAlgorithm(expId);
+  }
 }
 
 function closeSimulator() {
   const modal = document.getElementById('simulator-modal-backdrop');
-  modal.classList.remove('active');
-  document.body.style.overflow = '';
+  if (modal) {
+    modal.classList.remove('active');
+    document.body.style.overflow = '';
+  }
 }
 
 function selectSimulatorAlgorithm(expId) {
@@ -795,81 +1103,90 @@ function selectSimulatorAlgorithm(expId) {
     </div>
   `;
 
-  if (expId === 'exp-1' || expId === 'exp-3' || expId === 'exp-4') {
+  if (expId === 'exp-1') {
     html += `
-      <div style="display: flex; flex-direction: column; gap: 0.4rem;">
-        <label style="font-size: 0.75rem; font-weight: 600; color: var(--text-secondary);">${config.inputLabel}</label>
-        <input type="text" id="sim-array-input" class="sandbox-textarea" style="height: 42px; padding: 0.5rem 0.75rem;" value="${config.defaultInput}">
+      <div style="display: grid; grid-template-columns: 2fr 1fr 2fr; gap: 0.75rem;">
+        <div style="display: flex; flex-direction: column; gap: 0.4rem;">
+          <label style="font-size: 0.75rem; font-weight: 600; color: var(--text-secondary);">Student Full Name:</label>
+          <input type="text" id="sim-student-name" class="sandbox-textarea" style="height: 40px; padding: 0.5rem 0.75rem;" value="${config.defaultName}">
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 0.4rem;">
+          <label style="font-size: 0.75rem; font-weight: 600; color: var(--text-secondary);">Roll Number:</label>
+          <input type="number" id="sim-student-roll" class="sandbox-textarea" style="height: 40px; padding: 0.5rem 0.75rem;" value="${config.defaultRoll}">
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 0.4rem;">
+          <label style="font-size: 0.75rem; font-weight: 600; color: var(--text-secondary);">Marks (Java, DSA, WebTech):</label>
+          <input type="text" id="sim-student-marks" class="sandbox-textarea" style="height: 40px; padding: 0.5rem 0.75rem;" value="${config.defaultMarks}">
+        </div>
       </div>
     `;
   } else if (expId === 'exp-2') {
     html += `
-      <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 0.75rem;">
+      <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 0.75rem;">
         <div style="display: flex; flex-direction: column; gap: 0.4rem;">
-          <label style="font-size: 0.75rem; font-weight: 600; color: var(--text-secondary);">${config.inputLabel}</label>
-          <input type="text" id="sim-array-input" class="sandbox-textarea" style="height: 42px; padding: 0.5rem 0.75rem;" value="${config.defaultInput}">
+          <label style="font-size: 0.75rem; font-weight: 600; color: var(--text-secondary);">Cube Side (Box Constructor 1):</label>
+          <input type="number" id="sim-box-side" class="sandbox-textarea" style="height: 40px; padding: 0.5rem 0.75rem;" value="${config.boxSide}">
         </div>
         <div style="display: flex; flex-direction: column; gap: 0.4rem;">
-          <label style="font-size: 0.75rem; font-weight: 600; color: var(--text-secondary);">${config.keyLabel}</label>
-          <input type="text" id="sim-key-input" class="sandbox-textarea" style="height: 42px; padding: 0.5rem 0.75rem;" value="${config.defaultKey}">
+          <label style="font-size: 0.75rem; font-weight: 600; color: var(--text-secondary);">Prism (W, H, D - Box Constr 2):</label>
+          <input type="text" id="sim-box-dims" class="sandbox-textarea" style="height: 40px; padding: 0.5rem 0.75rem;" value="${config.boxDims}">
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 0.4rem;">
+          <label style="font-size: 0.75rem; font-weight: 600; color: var(--text-secondary);">Circle Radius (Method Overload):</label>
+          <input type="number" id="sim-circle-radius" class="sandbox-textarea" style="height: 40px; padding: 0.5rem 0.75rem;" value="${config.radius}">
+        </div>
+      </div>
+    `;
+  } else if (expId === 'exp-3') {
+    html += `
+      <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 0.75rem;">
+        <div style="display: flex; flex-direction: column; gap: 0.4rem;">
+          <label style="font-size: 0.75rem; font-weight: 600; color: var(--text-secondary);">Voter Age (InvalidAgeException):</label>
+          <input type="number" id="sim-test-age" class="sandbox-textarea" style="height: 40px; padding: 0.5rem 0.75rem;" value="${config.testAge}">
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 0.4rem;">
+          <label style="font-size: 0.75rem; font-weight: 600; color: var(--text-secondary);">Numerator (Division):</label>
+          <input type="number" id="sim-num-a" class="sandbox-textarea" style="height: 40px; padding: 0.5rem 0.75rem;" value="${config.divideNumerator}">
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 0.4rem;">
+          <label style="font-size: 0.75rem; font-weight: 600; color: var(--text-secondary);">Denominator (Test Div by 0):</label>
+          <input type="number" id="sim-num-b" class="sandbox-textarea" style="height: 40px; padding: 0.5rem 0.75rem;" value="${config.divideDenominator}">
+        </div>
+      </div>
+    `;
+  } else if (expId === 'exp-4') {
+    html += `
+      <div style="display: flex; flex-direction: column; align-items: center; gap: 1rem; padding: 1rem; background: #090a0f; border-radius: 6px;">
+        <div class="stopwatch-display" id="sim-sw-display" style="font-size: 2.5rem; min-width: 260px;">00:00:00:00</div>
+        <div class="stopwatch-controls">
+          <button class="btn-sw btn-sw-start" onclick="startCardStopwatch()">Start</button>
+          <button class="btn-sw btn-sw-stop" onclick="stopCardStopwatch()">Stop</button>
+          <button class="btn-sw btn-sw-reset" onclick="resetCardStopwatch()">Reset</button>
         </div>
       </div>
     `;
   } else if (expId === 'exp-5') {
     html += `
-      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem;">
-        <div style="display: flex; flex-direction: column; gap: 0.4rem;">
-          <label style="font-size: 0.75rem; font-weight: 600; color: var(--text-secondary);">Items [Profit, Weight] pairs:</label>
-          <input type="text" id="sim-knapsack-items" class="sandbox-textarea" style="height: 42px; padding: 0.5rem 0.75rem;" value="20:30, 10:100, 50:90">
+      <div style="display: flex; flex-direction: column; gap: 0.75rem;">
+        <div style="display: flex; gap: 0.75rem;">
+          <input type="text" id="sim-email-input" class="email-input-field" value="${config.defaultEmail}" placeholder="Enter email to validate...">
+          <button class="btn-validate-email" onclick="validateSimulatorEmail()">Validate Email</button>
         </div>
-        <div style="display: flex; flex-direction: column; gap: 0.4rem;">
-          <label style="font-size: 0.75rem; font-weight: 600; color: var(--text-secondary);">Knapsack Capacity:</label>
-          <input type="number" id="sim-knapsack-capacity" class="sandbox-textarea" style="height: 42px; padding: 0.5rem 0.75rem;" value="${config.capacity}">
+        <div style="font-size: 0.75rem; color: var(--text-muted);">
+          Rule: Must contain both '@' and '.' characters with '.' appearing after '@'.
         </div>
       </div>
     `;
   } else if (expId === 'exp-6') {
     html += `
-      <div style="display: flex; flex-direction: column; gap: 0.4rem;">
-        <label style="font-size: 0.75rem; font-weight: 600; color: var(--text-secondary);">Cost Adjacency Matrix (${config.vertices} vertices, 0 = no edge):</label>
-        <textarea id="sim-kruskal-matrix" class="sandbox-textarea" style="height: 90px; padding: 0.5rem 0.75rem;">0 12 5 10
-9 10 0 0
-6 0 5 7
-10 5 16 15</textarea>
-      </div>
-    `;
-  } else if (expId === 'exp-7') {
-    html += `
-      <div style="font-size: 0.8rem; color: var(--text-secondary);">
-        Solves the classic <strong>4-Queen Problem</strong> on a 4x4 chessboard using recursive backtracking. Displays all complete non-attacking solutions with ASCII chessboard drawings.
-      </div>
-    `;
-  } else if (expId === 'exp-8') {
-    html += `
-      <div style="display: grid; grid-template-columns: 1fr 2fr; gap: 0.75rem;">
-        <div style="display: flex; flex-direction: column; gap: 0.4rem;">
-          <label style="font-size: 0.75rem; font-weight: 600; color: var(--text-secondary);">Max Colors (m):</label>
-          <input type="number" id="sim-color-m" class="sandbox-textarea" style="height: 42px; padding: 0.5rem 0.75rem;" value="3">
+      <div style="display: flex; flex-direction: column; gap: 0.75rem;">
+        <div class="dom-color-preview" id="sim-dom-preview" style="height: 100px; background-color: #3b82f6;">
+          <div style="font-size: 1rem; font-weight: 800;" id="sim-dom-color-name">Dodger Blue (#3b82f6)</div>
+          <div class="dom-timer-progress" id="sim-dom-progress"></div>
         </div>
-        <div style="display: flex; flex-direction: column; gap: 0.4rem;">
-          <label style="font-size: 0.75rem; font-weight: 600; color: var(--text-secondary);">Adjacency Matrix (4 vertices):</label>
-          <textarea id="sim-color-matrix" class="sandbox-textarea" style="height: 90px; padding: 0.5rem 0.75rem;">0 1 1 1
-1 0 1 0
-1 1 0 1
-1 0 1 0</textarea>
-        </div>
-      </div>
-    `;
-  } else if (expId === 'exp-9') {
-    html += `
-      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem;">
-        <div style="display: flex; flex-direction: column; gap: 0.4rem;">
-          <label style="font-size: 0.75rem; font-weight: 600; color: var(--text-secondary);">First String (X):</label>
-          <input type="text" id="sim-lcs-x" class="sandbox-textarea" style="height: 42px; padding: 0.5rem 0.75rem;" value="${config.str1}">
-        </div>
-        <div style="display: flex; flex-direction: column; gap: 0.4rem;">
-          <label style="font-size: 0.75rem; font-weight: 600; color: var(--text-secondary);">Second String (Y):</label>
-          <input type="text" id="sim-lcs-y" class="sandbox-textarea" style="height: 42px; padding: 0.5rem 0.75rem;" value="${config.str2}">
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+          <span class="dom-countdown-text" id="sim-dom-countdown">Next color transition in: 5.0s</span>
+          <button class="btn-dom-toggle" onclick="cycleCardDomColorNow()">Cycle Next Color</button>
         </div>
       </div>
     `;
@@ -879,7 +1196,27 @@ function selectSimulatorAlgorithm(expId) {
   executeSimulatorAlgorithm();
 }
 
-// Execute the chosen algorithm in JS and print realistic Turbo C console output
+function validateSimulatorEmail() {
+  const input = document.getElementById('sim-email-input');
+  if (!input) return;
+  const email = input.value.trim();
+  const atPos = email.indexOf('@');
+  const dotPos = email.lastIndexOf('.');
+
+  let hasAt = (atPos > 0);
+  let hasDot = (dotPos > atPos + 1 && dotPos < email.length - 1);
+  let isValid = hasAt && hasDot;
+
+  if (isValid) {
+    showToast('✓ Email validation passed!');
+  } else {
+    alert(`Invalid Email Address!\n\nReason: Email must contain both '@' and '.' characters in valid positions.\n\nPlease re-enter a valid email address.`);
+  }
+
+  executeSimulatorAlgorithm();
+}
+
+// Execute the chosen experiment in JS and print realistic Java / JS console output
 function executeSimulatorAlgorithm() {
   const expId = state.simulator.selectedAlgorithm;
   const resultArea = document.getElementById('simulator-result-area');
@@ -890,339 +1227,168 @@ function executeSimulatorAlgorithm() {
   try {
     switch (expId) {
       case 'exp-1': {
-        const inputStr = document.getElementById('sim-array-input')?.value || '9, 3, 6, 1, 7, 2';
-        const arr = inputStr.split(/[\s,]+/).filter(x => x.length > 0).map(Number);
-        const n = arr.length;
-        log += `Enter the number of elements: ${n}\n`;
-        log += `Enter ${n} elements:\n` + arr.join('\n') + '\n\n';
+        const name = document.getElementById('sim-student-name')?.value || 'Pushkar Ravindra Mhatre';
+        const roll = Number(document.getElementById('sim-student-roll')?.value || 64);
+        const marksStr = document.getElementById('sim-student-marks')?.value || '92, 88, 95';
+        const marks = marksStr.split(/[\s,]+/).filter(x => x.length > 0).map(Number);
+        const m1 = marks[0] || 0;
+        const m2 = marks[1] || 0;
+        const m3 = marks[2] || 0;
+        const total = m1 + m2 + m3;
+        const percentage = (total / 300.0) * 100.0;
+        let grade = '';
+        if (percentage >= 90.0) grade = 'A+ (Distinction)';
+        else if (percentage >= 75.0) grade = 'A (First Class)';
+        else if (percentage >= 60.0) grade = 'B (Second Class)';
+        else if (percentage >= 40.0) grade = 'C (Pass Class)';
+        else grade = 'F (Fail)';
 
-        // Insertion Sort
-        for (let i = 1; i < n; i++) {
-          let key = arr[i];
-          let j = i - 1;
-          while (j >= 0 && arr[j] > key) {
-            arr[j + 1] = arr[j];
-            j--;
-          }
-          arr[j + 1] = key;
-        }
-
-        log += `Sorted array in ascending order:\n${arr.join(' ')}\n\nProcess completed in O(n²) worst-case time.`;
+        log += `==================================================\n`;
+        log += `         STUDENT ACADEMIC REPORT PORTAL           \n`;
+        log += `==================================================\n`;
+        log += `Instantiating Student object with 'new' keyword...\n`;
+        log += `Heap memory allocated for Student instance @ 0x7b23f81\n\n`;
+        log += `--------------------------------------------------\n`;
+        log += `Roll Number : ${roll}\n`;
+        log += `Student Name: ${name}\n`;
+        log += `Department  : Computer Engineering\n`;
+        log += `Subject Marks: Java: ${m1.toFixed(1)} | DSA: ${m2.toFixed(1)} | WebTech: ${m3.toFixed(1)}\n`;
+        log += `Total Marks : ${total.toFixed(1)} / 300.0\n`;
+        log += `Percentage  : ${percentage.toFixed(2)}%\n`;
+        log += `Final Grade : ${grade}\n`;
+        log += `--------------------------------------------------\n\n`;
+        log += `Demonstrating Object State Independence:\n`;
+        log += `Object s1 and Object s2 maintain isolated copies of instance fields.\n`;
+        log += `JVM execution finished with exit code 0.`;
         break;
       }
 
       case 'exp-2': {
-        const inputStr = document.getElementById('sim-array-input')?.value || '10, 20, 30, 50, 60, 80';
-        const key = Number(document.getElementById('sim-key-input')?.value ?? 50);
-        const arr = inputStr.split(/[\s,]+/).filter(x => x.length > 0).map(Number);
-        const n = arr.length;
+        const side = Number(document.getElementById('sim-box-side')?.value || 5.0);
+        const dimsStr = document.getElementById('sim-box-dims')?.value || '4, 6, 8';
+        const dims = dimsStr.split(/[\s,]+/).filter(x => x.length > 0).map(Number);
+        const w = dims[0] || 4.0, h = dims[1] || 6.0, d = dims[2] || 8.0;
+        const radius = Number(document.getElementById('sim-circle-radius')?.value || 7.0);
 
-        log += `Enter the number of elements: ${n}\n`;
-        log += `Enter ${n} elements in sorted order:\n` + arr.join('\n') + '\n';
-        log += `Enter the element to search: ${key}\n\n`;
+        const volCube = side * side * side;
+        const volPrism = w * h * d;
+        const circleArea = Math.PI * radius * radius;
+        const rectArea = 10.0 * 5.0;
+        const triArea = 0.5 * 8.0 * 6.0;
 
-        let low = 0, high = n - 1, mid = -1, found = false;
-        while (low <= high) {
-          mid = Math.floor((low + high) / 2);
-          if (arr[mid] === key) {
-            found = true;
-            break;
-          } else if (key < arr[mid]) {
-            high = mid - 1;
-          } else {
-            low = mid + 1;
-          }
-        }
-
-        if (found) {
-          log += `Element found at position ${mid + 1}\n(0-based index: ${mid})`;
-        } else {
-          log += `Element not found.`;
-        }
+        log += `==================================================\n`;
+        log += `   DEMONSTRATION OF CONSTRUCTOR & METHOD OVERLOADING \n`;
+        log += `==================================================\n\n`;
+        log += `[Part 1: Constructor Overloading in Class Box]\n`;
+        log += `--------------------------------------------------\n`;
+        log += `Invoking Box(): Default dimensions initialized.\n`;
+        log += `Volume of Default Box  : 0.000 cubic units\n`;
+        log += `Invoking Box(double side = ${side.toFixed(1)}): Cube constructor called.\n`;
+        log += `Volume of Cube         : ${volCube.toFixed(3)} cubic units\n`;
+        log += `Invoking Box(w=${w.toFixed(1)}, h=${h.toFixed(1)}, d=${d.toFixed(1)}): Rectangular prism constructor called.\n`;
+        log += `Volume of Prism        : ${volPrism.toFixed(3)} cubic units\n\n`;
+        log += `[Part 2: Method Overloading in Class ShapeCalculator]\n`;
+        log += `--------------------------------------------------\n`;
+        log += `area(double radius = ${radius.toFixed(1)})     -> Circle Area    : ${circleArea.toFixed(4)} sq. units\n`;
+        log += `area(double l = 10.0, double b = 5.0) -> Rectangle Area : ${rectArea.toFixed(2)} sq. units\n`;
+        log += `area(float b = 8.0f, float h = 6.0f)   -> Triangle Area  : ${triArea.toFixed(2)} sq. units\n`;
+        log += `--------------------------------------------------\n`;
+        log += `Compile-Time (Static) Polymorphism successfully resolved by JVM method signature matching.`;
         break;
       }
 
       case 'exp-3': {
-        const inputStr = document.getElementById('sim-array-input')?.value || '13, 24, 56, 76, 45, 56';
-        const arr = inputStr.split(/[\s,]+/).filter(x => x.length > 0).map(Number);
-        const n = arr.length;
+        const testAge = Number(document.getElementById('sim-test-age')?.value || 16);
+        const numA = Number(document.getElementById('sim-num-a')?.value || 100);
+        const numB = Number(document.getElementById('sim-num-b')?.value || 0);
 
-        log += `Enter the number of elements: ${n}\n`;
-        log += `Enter ${n} elements:\n` + arr.join('\n') + '\n\n';
-
-        function merge(a, low, mid, high) {
-          let temp = [];
-          let i = low, j = mid + 1;
-          while (i <= mid && j <= high) {
-            if (a[i] < a[j]) temp.push(a[i++]);
-            else temp.push(a[j++]);
-          }
-          while (i <= mid) temp.push(a[i++]);
-          while (j <= high) temp.push(a[j++]);
-          for (let k = 0; k < temp.length; k++) {
-            a[low + k] = temp[k];
-          }
+        log += `==================================================\n`;
+        log += `    INHERITANCE & EXCEPTION HANDLING IN JAVA       \n`;
+        log += `==================================================\n\n`;
+        log += `[Section 1: Multi-Level Inheritance Demonstration]\n`;
+        log += `Instantiating derived class Manager (subclass of Employee)...\n`;
+        log += `Invoked super(id, name, department, baseSalary) via super() constructor chaining.\n`;
+        log += `--------------------------------------------------\n`;
+        log += `Employee ID : EMP-101\n`;
+        log += `Name        : Pushkar Ravindra Mhatre\n`;
+        log += `Department  : Software Engineering\n`;
+        log += `Base Salary : Rs. 85,000.00\n`;
+        log += `Manager Bonus & Allowance: Rs. 20,000.00\n`;
+        log += `Net Remuneration: Rs. 1,05,000.00\n`;
+        log += `--------------------------------------------------\n\n`;
+        log += `[Section 2: Built-in Exception Handling (ArithmeticException)]\n`;
+        log += `Attempting division: ${numA} / ${numB}...\n`;
+        if (numB === 0) {
+          log += `[CAUGHT ArithmeticException]: / by zero\n`;
+          log += `Exception message: Division by zero is mathematically undefined.\n`;
+          log += `[Finally Block]: Execution cleanup complete. Continuing program flow...\n\n`;
+        } else {
+          log += `Result = ${(numA / numB).toFixed(2)}\n`;
+          log += `[Finally Block]: Clean execution without arithmetic fault.\n\n`;
         }
 
-        function mergeSort(a, low, high) {
-          if (low < high) {
-            let mid = Math.floor((low + high) / 2);
-            mergeSort(a, low, mid);
-            mergeSort(a, mid + 1, high);
-            merge(a, low, mid, high);
-          }
+        log += `[Section 3: User-Defined Checked Exception (InvalidAgeException)]\n`;
+        log += `Verifying voter registration for candidate age: ${testAge}...\n`;
+        if (testAge < 18) {
+          log += `[CAUGHT InvalidAgeException]: Candidate age ${testAge} is ineligible for voting!\n`;
+          log += `[Finally Block]: Age verification transaction closed.\n`;
+        } else {
+          log += `[SUCCESS]: Candidate age ${testAge} is eligible to vote.\n`;
+          log += `[Finally Block]: Age verification transaction closed.\n`;
         }
-
-        mergeSort(arr, 0, n - 1);
-        log += `Sorted array using Merge Sort:\n${arr.join(' ')}\n\nGuaranteed O(n log n) divide-and-conquer execution.`;
         break;
       }
 
       case 'exp-4': {
-        const inputStr = document.getElementById('sim-array-input')?.value || '23, 443, 12, 4, 56, 78';
-        const arr = inputStr.split(/[\s,]+/).filter(x => x.length > 0).map(Number);
-        const n = arr.length;
-
-        log += `Enter the number of elements: ${n}\n`;
-        log += `Enter ${n} elements:\n` + arr.join('\n') + '\n\n';
-
-        function quicksort(a, low, high) {
-          if (low < high) {
-            let pivot = a[low];
-            let i = low + 1;
-            let j = high;
-            while (i <= j) {
-              while (i <= high && a[i] <= pivot) i++;
-              while (a[j] > pivot) j--;
-              if (i < j) {
-                let temp = a[i]; a[i] = a[j]; a[j] = temp;
-              }
-            }
-            a[low] = a[j];
-            a[j] = pivot;
-            quicksort(a, low, j - 1);
-            quicksort(a, j + 1, high);
-          }
-        }
-
-        quicksort(arr, 0, n - 1);
-        log += `Sorted array using Quick Sort:\n${arr.join(' ')}\n\nIn-place partition-exchange completed.`;
+        log += `==================================================\n`;
+        log += `   JAVASCRIPT STOPWATCH APPLICATION STATE ENGINE   \n`;
+        log += `==================================================\n`;
+        log += `Current Elapsed Time: ${formatStopwatchTime(state.stopwatch.elapsedTime)}\n`;
+        log += `Timer Status: ${state.stopwatch.isRunning ? 'RUNNING (Tick: 10ms)' : 'STOPPED / PAUSED'}\n\n`;
+        log += `DOM Event Handlers:\n`;
+        log += `- btnStart.addEventListener('click', startTimer)\n`;
+        log += `- btnStop.addEventListener('click', stopTimer)\n`;
+        log += `- btnReset.addEventListener('click', resetTimer)\n\n`;
+        log += `Timing Mechanism: window.setInterval() millisecond precision timestamp difference.`;
         break;
       }
 
       case 'exp-5': {
-        const itemsStr = document.getElementById('sim-knapsack-items')?.value || '20:30, 10:100, 50:90';
-        let capacity = Number(document.getElementById('sim-knapsack-capacity')?.value || 60);
+        const email = document.getElementById('sim-email-input')?.value || 'pushkarmhatre@gmail.com';
+        const atPos = email.indexOf('@');
+        const dotPos = email.lastIndexOf('.');
+        let hasAt = (atPos > 0);
+        let hasDot = (dotPos > atPos + 1 && dotPos < email.length - 1);
+        let isValid = hasAt && hasDot;
 
-        const items = itemsStr.split(',').map((pair, idx) => {
-          const [p, w] = pair.trim().split(':').map(Number);
-          return { id: idx + 1, profit: p, weight: w, ratio: p / w };
-        });
-
-        const n = items.length;
-        log += `Enter number of items: ${n}\n`;
-        items.forEach(it => {
-          log += `\nEnter Profit and Weight of item ${it.id}: ${it.profit} ${it.weight} (Ratio = ${it.ratio.toFixed(2)})`;
-        });
-        log += `\n\nEnter Knapsack Capacity: ${capacity}\n\n`;
-
-        // Sort descending by ratio
-        items.sort((a, b) => b.ratio - a.ratio);
-
-        let totalProfit = 0;
-        log += `Selected Items:\n`;
-        for (let i = 0; i < n; i++) {
-          if (capacity >= items[i].weight) {
-            log += `Take Item ${i + 1} completely\n`;
-            capacity -= items[i].weight;
-            totalProfit += items[i].profit;
-          } else {
-            let frac = capacity / items[i].weight;
-            log += `Take ${frac.toFixed(2)} fraction of Item ${i + 1}\n`;
-            totalProfit += items[i].profit * frac;
-            break;
-          }
+        log += `==================================================\n`;
+        log += `     JAVASCRIPT EMAIL ADDRESS VALIDATOR ENGINE    \n`;
+        log += `==================================================\n`;
+        log += `Input String : "${email}"\n`;
+        log += `Length       : ${email.length} characters\n`;
+        log += `Index of '@' : ${atPos} ${hasAt ? '(Valid: present after index 0)' : '(INVALID: missing or at start)'}\n`;
+        log += `Index of '.' : ${dotPos} ${hasDot ? '(Valid: present after @)' : '(INVALID: missing or misplaced)'}\n\n`;
+        if (isValid) {
+          log += `[VALIDATION SUCCESS]\n`;
+          log += `✓ Email address satisfies standard syntactic structure.\n`;
+          log += `✓ Form submission authorized.`;
+        } else {
+          log += `[VALIDATION FAILED]\n`;
+          log += `✗ Displaying window.alert("Please enter a valid email address with '@' and '.'");\n`;
+          log += `✗ document.getElementById('email').focus(); invoked to re-enter input.`;
         }
-        log += `\nMaximum Profit = ${totalProfit.toFixed(2)}`;
         break;
       }
 
       case 'exp-6': {
-        const matrixStr = document.getElementById('sim-kruskal-matrix')?.value || '0 12 5 10\n9 10 0 0\n6 0 5 7\n10 5 16 15';
-        const lines = matrixStr.trim().split('\n');
-        const n = lines.length;
-        let cost = [];
-        for (let i = 0; i < n; i++) {
-          cost[i + 1] = [];
-          let row = lines[i].trim().split(/\s+/).map(Number);
-          for (let j = 0; j < n; j++) {
-            let val = row[j];
-            cost[i + 1][j + 1] = (val === 0) ? 999 : val;
-          }
-        }
-
-        let parent = [];
-        for (let i = 1; i <= n; i++) parent[i] = i;
-
-        function find(i) {
-          while (parent[i] !== i) i = parent[i];
-          return i;
-        }
-        function uni(i, j) {
-          parent[i] = j;
-        }
-
-        log += `Enter the number of vertices: ${n}\n`;
-        log += `Enter the cost adjacency matrix:\n${matrixStr}\n\n`;
-        log += `Edges in the Minimum Spanning Tree:\n`;
-
-        let ne = 1, mincost = 0;
-        while (ne < n) {
-          let min = 999, a = 0, b = 0, u = 0, v = 0;
-          for (let i = 1; i <= n; i++) {
-            for (let j = 1; j <= n; j++) {
-              if (cost[i][j] < min) {
-                min = cost[i][j];
-                a = u = i;
-                b = v = j;
-              }
-            }
-          }
-          u = find(u);
-          v = find(v);
-          if (u !== v) {
-            log += `${ne++} Edge (${a},${b}) = ${min}\n`;
-            mincost += min;
-            uni(u, v);
-          }
-          cost[a][b] = cost[b][a] = 999;
-        }
-        log += `\nMinimum Cost = ${mincost}`;
-        break;
-      }
-
-      case 'exp-7': {
-        log += `4-QUEEN PROBLEM\n================\n`;
-        let x = [];
-        let count = 0;
-
-        function place(k, i) {
-          for (let j = 0; j < k; j++) {
-            if (x[j] === i || Math.abs(x[j] - i) === Math.abs(j - k)) {
-              return false;
-            }
-          }
-          return true;
-        }
-
-        function display() {
-          log += `\nSolution ${count}:\n`;
-          for (let i = 0; i < 4; i++) {
-            log += `+---+---+---+---+\n`;
-            for (let j = 0; j < 4; j++) {
-              if (x[i] === j) log += `| Q `;
-              else log += `|   `;
-            }
-            log += `|\n`;
-          }
-          log += `+---+---+---+---+\n`;
-        }
-
-        function nqueen(k) {
-          for (let i = 0; i < 4; i++) {
-            if (place(k, i)) {
-              x[k] = i;
-              if (k === 3) {
-                count++;
-                display();
-              } else {
-                nqueen(k + 1);
-              }
-            }
-          }
-        }
-
-        nqueen(0);
-        log += `\nTotal Solutions = ${count}`;
-        break;
-      }
-
-      case 'exp-8': {
-        const m = Number(document.getElementById('sim-color-m')?.value || 3);
-        const matrixStr = document.getElementById('sim-color-matrix')?.value || '0 1 1 1\n1 0 1 0\n1 1 0 1\n1 0 1 0';
-        const lines = matrixStr.trim().split('\n');
-        const n = lines.length;
-        let graph = [];
-        for (let i = 0; i < n; i++) {
-          graph[i] = lines[i].trim().split(/\s+/).map(Number);
-        }
-        let color = new Array(n).fill(0);
-
-        function isSafe(v, c) {
-          for (let i = 0; i < n; i++) {
-            if (graph[v][i] === 1 && color[i] === c) return false;
-          }
-          return true;
-        }
-
-        function graphColoring(v) {
-          if (v === n) return true;
-          for (let c = 1; c <= m; c++) {
-            if (isSafe(v, c)) {
-              color[v] = c;
-              if (graphColoring(v + 1)) return true;
-              color[v] = 0;
-            }
-          }
-          return false;
-        }
-
-        log += `Enter number of vertices: ${n}\nEnter number of colors: ${m}\n\nEnter the adjacency matrix:\n${matrixStr}\n\n`;
-        if (graphColoring(0)) {
-          log += `Graph can be colored using ${m} colors.\n\nVertex\tColor\n`;
-          for (let i = 0; i < n; i++) {
-            log += `${i + 1}\t${color[i]}\n`;
-          }
-        } else {
-          log += `Graph cannot be colored using ${m} colors.`;
-        }
-        break;
-      }
-
-      case 'exp-9': {
-        const X = document.getElementById('sim-lcs-x')?.value || 'ABCDEF';
-        const Y = document.getElementById('sim-lcs-y')?.value || 'ACEAF';
-        const m = X.length;
-        const n = Y.length;
-
-        log += `Enter first string: ${X}\nEnter second string: ${Y}\n\n`;
-
-        // 2D DP table
-        let L = Array.from({ length: m + 1 }, () => new Array(n + 1).fill(0));
-        for (let i = 0; i <= m; i++) {
-          for (let j = 0; j <= n; j++) {
-            if (i === 0 || j === 0) L[i][j] = 0;
-            else if (X[i - 1] === Y[j - 1]) L[i][j] = L[i - 1][j - 1] + 1;
-            else L[i][j] = Math.max(L[i - 1][j], L[i][j - 1]);
-          }
-        }
-
-        log += `Length of LCS = ${L[m][n]}\n`;
-
-        // Backtrack LCS
-        let lcsArr = [];
-        let i = m, j = n;
-        while (i > 0 && j > 0) {
-          if (X[i - 1] === Y[j - 1]) {
-            lcsArr.unshift(X[i - 1]);
-            i--; j--;
-          } else if (L[i - 1][j] > L[i][j - 1]) {
-            i--;
-          } else {
-            j--;
-          }
-        }
-        log += `LCS = ${lcsArr.join('')}\n\n...Program finished with exit code 255\nPress ENTER to exit console.`;
+        log += `==================================================\n`;
+        log += `   DOM AUTOMATED BACKGROUND COLOR CHANGER ENGINE  \n`;
+        log += `==================================================\n`;
+        log += `Interval: 5000 milliseconds (5.0 seconds)\n`;
+        log += `DOM Target: document.body.style.backgroundColor\n\n`;
+        log += `Color Palette Array:\n`;
+        log += `[0] #3b82f6 (Dodger Blue)\n[1] #10b981 (Emerald Green)\n[2] #f59e0b (Amber Orange)\n[3] #ef4444 (Ruby Crimson)\n[4] #8b5cf6 (Amethyst Violet)\n[5] #ec4899 (Rose Coral)\n[6] #06b6d4 (Cyan Aqua)\n[7] #14b8a6 (Deep Teal)\n\n`;
+        log += `Current Status: Active cyclic transitions triggered by window.setInterval().`;
         break;
       }
     }
@@ -1233,7 +1399,7 @@ function executeSimulatorAlgorithm() {
   resultArea.innerHTML = `
     <div class="terminal-console-box">
       <div class="terminal-header">
-        <span>C Runtime Standard Output (stdout)</span>
+        <span>Runtime Standard Output (stdout)</span>
         <span class="terminal-tag">Status: 200 OK</span>
       </div>
       <div style="font-family: var(--font-mono); font-size: 0.825rem; white-space: pre-wrap;">${escapeHtml(log)}</div>

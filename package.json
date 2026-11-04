@@ -1,21 +1,23 @@
 {
-  "name": "aoa-lab-portal",
+  "name": "java-webtech-lab-portal",
   "version": "1.0.0",
-  "description": "Analysis of Algorithms (AOA) Laboratory Experiments Portal with C Programs, Complexities, and Console Outputs",
+  "description": "Full Stack Java Programming & Web Technologies Practicals Portal with Java Source Codes, JavaScript Web Apps, Execution Screenshots, and In-Browser Simulator",
   "main": "index.html",
   "scripts": {
     "dev": "node dev-server.js",
     "start": "node dev-server.js"
   },
   "keywords": [
-    "aoa",
-    "daa",
-    "algorithms",
-    "c-programming",
-    "sorting",
-    "dynamic-programming",
-    "greedy",
-    "backtracking",
+    "java",
+    "oop",
+    "classes-and-objects",
+    "overloading",
+    "inheritance",
+    "exception-handling",
+    "javascript",
+    "dom",
+    "stopwatch",
+    "email-validation",
     "laboratory-journal",
     "static-site"
   ],
